@@ -14,12 +14,17 @@ pub(all) struct Locale {
   language : String
   script : String
   region : String
+  variants : String
+  extensions : String
 } derive(Eq, Hash, @debug.Debug)
 pub fn Locale::fallbacks(Self) -> Array[String]
-pub fn Locale::new(String, script? : String, region? : String) -> Self
+pub fn Locale::maximize(Self) -> Self
+pub fn Locale::negotiate(String, Array[Self]) -> Self?
+pub fn Locale::new(String, script? : String, region? : String, variants? : String, extensions? : String) -> Self
 pub fn Locale::parse(String) -> Self
 pub fn Locale::same(Self, Self) -> Bool
 pub fn Locale::to_tag(Self) -> String
+pub fn Locale::try_parse(String) -> Self?
 
 // Type aliases
 

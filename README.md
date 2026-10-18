@@ -28,7 +28,7 @@ Early alpha, but the core pipeline is implemented and tested.
 
 | Area | Implemented | Notes |
 | --- | --- | --- |
-| Locale parsing | BCP 47 subset | language / script / region + fallback chain |
+| Locale parsing | BCP 47 subset | strict parser, variants/extensions, likely subtags, Accept-Language negotiation |
 | Decimal | Yes | CLDR patterns, grouping, min/max fraction digits |
 | Currency | Yes | symbol/code/name/narrow display, accounting patterns, ISO 4217 digits |
 | Percent | Yes | CLDR percent pattern and localized percent sign |
@@ -61,6 +61,27 @@ rules.select(3.0)                                    // few
 @relative.format_relative(-3.0, @relative.Day, locale) // vor 3 Tagen
 // `format_relative` also accepts `rules=...` to reuse a precompiled rule set.
 ```
+
+Locale parsing is strict when requested, while `parse` remains best-effort:
+
+```moonbit
+@core.Locale::try_parse("de-abc")                       // None
+@core.Locale::parse("de-abc").to_tag()                  // de
+@core.Locale::parse("sl-rozaj-biske-1994").to_tag()     // sl-rozaj-biske-1994
+@core.Locale::parse("zh-HK").maximize().to_tag()        // zh-Hant-HK
+
+let available = [
+  @core.Locale::parse("en"),
+  @core.Locale::parse("zh-Hans"),
+  @core.Locale::parse("zh-Hant"),
+]
+@core.Locale::negotiate("zh-HK, en;q=0.8", available)   // Some(zh-Hant)
+```
+
+The strict parser covers language, script, region, variants, extensions and
+private-use sections. Extlang and grandfathered tags are rejected rather than
+guessed. The built-in likely-subtag table covers the bundled locales and common
+languages.
 
 With options:
 
@@ -105,7 +126,7 @@ rules.select_with_digits(
 
 | Package | Responsibility |
 | --- | --- |
-| `core` | Locale parsing, canonical tags, fallback chain |
+| `core` | Strict locale parsing, likely subtags, negotiation, fallback chain |
 | `data` | Generated CLDR tables (numbers, dates, plurals, relative time) |
 | `decimal` | Shared decimal string expansion, rounding and parsing |
 | `number` | Pattern parser and decimal / currency / percent rendering |
@@ -138,7 +159,8 @@ moon test
 moon check
 ```
 
-Coverage currently includes locale fallback, grouping and fraction rules,
+Coverage currently includes strict locale parsing, likely subtags,
+Accept-Language negotiation, locale fallback, grouping and fraction rules,
 negative subpatterns, ISO 4217 digits, cardinal and ordinal plural selection,
 date/time styles across locales, quoted pattern literals and relative time.
 
