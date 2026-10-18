@@ -27,8 +27,8 @@ fn fallback_number_data() -> @data.NumberData {
         currency_unit_pattern_one: "{0} {1}",
         currency_unit_pattern_other: "{0} {1}",
         currency_spacing: "\u{00A0}",
-        currency_symbols: [],
-        currency_narrow_symbols: [],
+        currency_symbol_overrides: [],
+        currency_narrow_symbol_overrides: [],
         currency_names: [],
       }
   }

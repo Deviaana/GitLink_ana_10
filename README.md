@@ -146,11 +146,18 @@ Generated code is committed, so consumers do not need Node.js. To refresh it:
 
 ```bash
 node tools/fetch-cldr.mjs   # downloads the pinned CLDR JSON subset
-node tools/gen-cldr.mjs     # rewrites data/generated.mbt
+node tools/gen-cldr.mjs     # rewrites and formats data/generated.mbt
 moon test
 ```
 
 Source: [unicode-org/cldr-json](https://github.com/unicode-org/cldr-json).
+
+Generated currency data is deduplicated: one shared ISO code table and one
+English-based symbol table are emitted once, while each locale stores only its
+symbol and narrow-symbol overrides plus localized names in currency-code order.
+This reduced `data/generated.mbt` from 40,088 to 34,697 bytes (13.4%). The
+generator runs `moon fmt` on the generated file so regeneration stays
+formatter-clean.
 
 ## Tests
 
@@ -162,7 +169,8 @@ moon check
 Coverage currently includes strict locale parsing, likely subtags,
 Accept-Language negotiation, locale fallback, grouping and fraction rules,
 negative subpatterns, ISO 4217 digits, cardinal and ordinal plural selection,
-date/time styles across locales, quoted pattern literals and relative time.
+date/time styles across locales, quoted pattern literals, relative time, and
+shared currency table overrides.
 
 ## Conformance
 

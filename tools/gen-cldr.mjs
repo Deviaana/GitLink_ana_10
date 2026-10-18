@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -7,6 +8,17 @@ const currencyCodes = [
   "CAD", "CHF", "HKD", "TWD", "SGD", "THB", "VND", "IDR", "MYR", "PHP",
   "SEK", "NOK", "DKK", "PLN", "TRY", "ZAR", "MXN", "AED", "SAR",
 ];
+
+function formatMoonBit(path) {
+  const moon = process.platform === "win32" ? "moon.exe" : "moon";
+  const result = spawnSync(moon, ["fmt", path], { encoding: "utf8" });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    process.stderr.write(result.stdout ?? "");
+    process.stderr.write(result.stderr ?? "");
+    throw new Error(`moon fmt failed for ${path}`);
+  }
+}
 
 const cache = join("tools", "cldr-cache");
 const outDir = join("data");
@@ -38,6 +50,42 @@ function tripleArr(triples) {
   return "[" + triples.map(([a, b, c]) =>
     "(" + esc(a) + ", " + esc(b) + ", " + esc(c) + ")"
   ).join(", ") + "]";
+}
+
+function indexedTextArr(entries) {
+  return "[" + entries.map(([index, value]) =>
+    "(" + index + ", " + esc(value) + ")"
+  ).join(", ") + "]";
+}
+
+function textPairArr(pairs) {
+  return "[" + pairs.map(([a, b]) =>
+    "(" + esc(a) + ", " + esc(b) + ")"
+  ).join(", ") + "]";
+}
+
+function currencySymbolOverrides(entries, baseEntries) {
+  const base = new Map(baseEntries);
+  return entries.flatMap(([code, value], index) =>
+    value === base.get(code) ? [] : [[index, value]]
+  );
+}
+
+function currencyNarrowOverrides(symbols, narrowSymbols) {
+  const regular = new Map(symbols);
+  return narrowSymbols.flatMap(([code, value], index) =>
+    value === regular.get(code) ? [] : [[index, value]]
+  );
+}
+
+function emitCurrencyTables(base) {
+  return [
+    `///|`,
+    `let currency_codes : Array[String] = ${arr(currencyCodes)}`,
+    `///|`,
+    `let currency_base_symbols : Array[String] = ${arr(base.currency_symbols.map(([, value]) => value))}`,
+    ``,
+  ].join("\n");
 }
 
 function numberData(locale) {
@@ -167,9 +215,9 @@ function emitNumber(locale, d) {
     `  currency_unit_pattern_one: ${esc(d.currency_unit_pattern_one)},`,
     `  currency_unit_pattern_other: ${esc(d.currency_unit_pattern_other)},`,
     `  currency_spacing: ${esc(d.currency_spacing)},`,
-    `  currency_symbols: ${tupleArr(d.currency_symbols)},`,
-    `  currency_narrow_symbols: ${tupleArr(d.currency_narrow_symbols)},`,
-    `  currency_names: ${tripleArr(d.currency_names)},`,
+    `  currency_symbol_overrides: ${indexedTextArr(d.currency_symbol_overrides)},`,
+    `  currency_narrow_symbol_overrides: ${indexedTextArr(d.currency_narrow_symbol_overrides)},`,
+    `  currency_names: ${textPairArr(d.currency_names)},`,
     `}`,
     ``,
   ].join("\n");
@@ -305,8 +353,22 @@ const header = [
   "",
 ].join("\n");
 
-const parts = [header];
-for (const locale of locales) parts.push(emitNumber(locale, numberData(locale)));
+const numbersByLocale = new Map(locales.map((locale) => [locale, numberData(locale)]));
+const currencyBase = numbersByLocale.get(locales[0]);
+for (const d of numbersByLocale.values()) {
+  d.currency_symbol_overrides = currencySymbolOverrides(
+    d.currency_symbols,
+    currencyBase.currency_symbols,
+  );
+  d.currency_narrow_symbol_overrides = currencyNarrowOverrides(
+    d.currency_symbols,
+    d.currency_narrow_symbols,
+  );
+  d.currency_names = d.currency_names.map(([, one, other]) => [one, other]);
+}
+
+const parts = [header, emitCurrencyTables(currencyBase)];
+for (const locale of locales) parts.push(emitNumber(locale, numbersByLocale.get(locale)));
 for (const locale of locales) parts.push(emitPlural(locale, pluralData(locale)));
 for (const locale of locales) parts.push(emitDate(locale, dateData(locale)));
 for (const locale of locales) parts.push(emitRelative(locale, relativeData(locale)));
@@ -317,5 +379,8 @@ parts.push(emitLookup("relative_data", "RelativeData", "relative"));
 parts.push(emitCurrencyDigits());
 
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, "generated.mbt"), parts.join("\n"), "utf8");
-console.log("wrote data/generated.mbt", parts.join("\n").length, "bytes");
+const outPath = join(outDir, "generated.mbt");
+writeFileSync(outPath, parts.join("\n"), "utf8");
+formatMoonBit(outPath);
+const formatted = readFileSync(outPath, "utf8");
+console.log("wrote", outPath, formatted.length, "characters");

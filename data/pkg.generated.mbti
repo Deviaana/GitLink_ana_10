@@ -47,9 +47,9 @@ pub(all) struct NumberData {
   currency_unit_pattern_one : String
   currency_unit_pattern_other : String
   currency_spacing : String
-  currency_symbols : Array[(String, String)]
-  currency_narrow_symbols : Array[(String, String)]
-  currency_names : Array[(String, String, String)]
+  currency_symbol_overrides : Array[(Int, String)]
+  currency_narrow_symbol_overrides : Array[(Int, String)]
+  currency_names : Array[(String, String)]
 }
 pub fn NumberData::currency_name(Self, String, String) -> String
 pub fn NumberData::currency_narrow_symbol(Self, String) -> String

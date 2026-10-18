@@ -15,21 +15,46 @@ pub(all) struct NumberData {
   currency_unit_pattern_one : String
   currency_unit_pattern_other : String
   currency_spacing : String
-  currency_symbols : Array[(String, String)]
-  currency_narrow_symbols : Array[(String, String)]
-  currency_names : Array[(String, String, String)]
+  currency_symbol_overrides : Array[(Int, String)]
+  currency_narrow_symbol_overrides : Array[(Int, String)]
+  currency_names : Array[(String, String)]
+}
+
+///|
+/// Find a currency code in the shared generated currency table.
+fn currency_index(code : String) -> Int? {
+  let mut index = 0
+  while index < currency_codes.length() {
+    if currency_codes[index] == code {
+      return Some(index)
+    }
+    index = index + 1
+  }
+  None
+}
+
+///|
+fn currency_override(overrides : Array[(Int, String)], index : Int) -> String? {
+  for entry in overrides {
+    if entry.0 == index {
+      return Some(entry.1)
+    }
+  }
+  None
 }
 
 ///|
 /// Look up a currency symbol, falling back to the ISO code itself.
 pub fn NumberData::currency_symbol(self : NumberData, code : String) -> String {
   let upper = code.to_upper()
-  for entry in self.currency_symbols {
-    if entry.0 == upper {
-      return entry.1
-    }
+  match currency_index(upper) {
+    Some(index) =>
+      match currency_override(self.currency_symbol_overrides, index) {
+        Some(symbol) => symbol
+        None => currency_base_symbols[index]
+      }
+    None => upper
   }
-  upper
 }
 
 ///|
@@ -39,12 +64,14 @@ pub fn NumberData::currency_narrow_symbol(
   code : String,
 ) -> String {
   let upper = code.to_upper()
-  for entry in self.currency_narrow_symbols {
-    if entry.0 == upper {
-      return entry.1
-    }
+  match currency_index(upper) {
+    Some(index) =>
+      match currency_override(self.currency_narrow_symbol_overrides, index) {
+        Some(symbol) => symbol
+        None => self.currency_symbol(upper)
+      }
+    None => self.currency_symbol(upper)
   }
-  self.currency_symbol(upper)
 }
 
 ///|
@@ -55,12 +82,20 @@ pub fn NumberData::currency_name(
   category : String,
 ) -> String {
   let upper = code.to_upper()
-  for entry in self.currency_names {
-    if entry.0 == upper {
-      return if category == "one" { entry.1 } else { entry.2 }
-    }
+  match currency_index(upper) {
+    Some(index) =>
+      if index < self.currency_names.length() {
+        let entry = self.currency_names[index]
+        if category == "one" {
+          entry.0
+        } else {
+          entry.1
+        }
+      } else {
+        upper
+      }
+    None => upper
   }
-  upper
 }
 
 ///|
