@@ -35,12 +35,12 @@ fn resolve_date_data(locale : @core.Locale) -> @data.DateData {
 }
 
 ///|
-fn pad_number(value : Int, digits : Int) -> String {
+fn pad_number(value : Int32, digits : Int32) -> String {
   value.to_string().pad_start(digits, '0')
 }
 
 ///|
-fn month_name(data : @data.DateData, month : Int, count : Int) -> String {
+fn month_name(data : @data.DateData, month : Int32, count : Int32) -> String {
   if month < 1 || month > 12 {
     return ""
   }
@@ -55,7 +55,7 @@ fn month_name(data : @data.DateData, month : Int, count : Int) -> String {
 fn append_field(
   builder : StringBuilder,
   field : Char,
-  count : Int,
+  count : Int32,
   date : DateTime,
   data : @data.DateData,
 ) -> Unit {
@@ -113,7 +113,7 @@ fn is_supported_field(field : Char) -> Bool {
 }
 
 ///|
-fn write_repeated(builder : StringBuilder, field : Char, count : Int) -> Unit {
+fn write_repeated(builder : StringBuilder, field : Char, count : Int32) -> Unit {
   let mut index = 0
   while index < count {
     builder.write_object(field)

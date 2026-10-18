@@ -101,11 +101,11 @@ fn operands_from_digits(
   }
   let w = trimmed.length()
   let t = if w == 0 { 0.0 } else { @decimal.parse_decimal_text(trimmed) }
-  { n, i, v: v.to_double(), w: w.to_double(), f, t, c: 0.0, e: 0.0 }
+  { n, i, v: v.to_double(), w: w.to_double(), f, t, c: 0.0, e: 0.0, }
 }
 
 ///|
-fn operands_of(value : Double, visible : Int?) -> Operands {
+fn operands_of(value : Double, visible : Int32?) -> Operands {
   let n = value.abs()
   let raw = n.to_string()
   let expanded = @decimal.expand_decimal(raw)
@@ -139,7 +139,7 @@ fn select_operands(rules : PluralRules, ops : Operands) -> String {
 pub fn PluralRules::select(
   self : PluralRules,
   value : Double,
-  visible_fraction_digits? : Int,
+  visible_fraction_digits? : Int32,
 ) -> String {
   select_operands(self, operands_of(value, visible_fraction_digits))
 }

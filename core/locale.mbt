@@ -16,8 +16,8 @@ pub(all) struct Locale {
 priv struct LanguageRange {
   tag : String
   locale : Locale?
-  quality : Int
-  order : Int
+  quality : Int32
+  order : Int32
 }
 
 ///|
@@ -507,7 +507,7 @@ pub fn Locale::maximize(self : Locale) -> Locale {
 }
 
 ///|
-fn parse_quality(value : StringView) -> Int? {
+fn parse_quality(value : StringView) -> Int32? {
   let text = value.trim()
   if text.length() == 0 {
     return None
@@ -588,11 +588,11 @@ fn parse_accept_language(header : String) -> Array[LanguageRange] {
     }
     if valid && quality > 0 {
       if tag == "*" {
-        ranges.push({ tag, locale: None, quality, order })
+        ranges.push({ tag, locale: None, quality, order, })
       } else {
         match Locale::try_parse(tag) {
           Some(locale) =>
-            ranges.push({ tag, locale: Some(locale), quality, order })
+            ranges.push({ tag, locale: Some(locale), quality, order, })
           None => ()
         }
       }
@@ -611,7 +611,7 @@ fn parse_accept_language(header : String) -> Array[LanguageRange] {
 ///|
 /// Rank how well an available locale matches a requested range. Lower is
 /// better. `None` means the language does not match.
-fn locale_match_rank(requested : Locale, candidate : Locale) -> Int? {
+fn locale_match_rank(requested : Locale, candidate : Locale) -> Int32? {
   if requested.language != candidate.language {
     return None
   }

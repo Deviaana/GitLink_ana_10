@@ -17,4 +17,3 @@ pub fn split_decimal(String) -> (String, String)
 // Type aliases
 
 // Traits
-

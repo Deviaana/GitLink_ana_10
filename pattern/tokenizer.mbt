@@ -2,9 +2,9 @@
 /// One lexical token from a CLDR date or number pattern.
 pub(all) enum PatternToken {
   Literal(String)
-  Field(Char, Int)
-  Placeholder(Char, Int)
-  Currency(Int)
+  Field(Char, Int32)
+  Placeholder(Char, Int32)
+  Currency(Int32)
   Separator
 }
 

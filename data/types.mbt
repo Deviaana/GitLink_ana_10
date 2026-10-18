@@ -15,17 +15,17 @@ pub(all) struct NumberData {
   currency_unit_pattern_one : String
   currency_unit_pattern_other : String
   currency_spacing : String
-  currency_symbol_overrides : Array[(Int, String)]
-  currency_narrow_symbol_overrides : Array[(Int, String)]
+  currency_symbol_overrides : Array[(Int32, String)]
+  currency_narrow_symbol_overrides : Array[(Int32, String)]
   currency_names : Array[(String, String)]
   scientific_pattern : String
-  compact_patterns : Array[(Int, String)]
-  compact_plural_patterns : Array[(Int, String, String)]
+  compact_patterns : Array[(Int32, String)]
+  compact_plural_patterns : Array[(Int32, String, String)]
 }
 
 ///|
 /// Find a currency code in the shared generated currency table.
-fn currency_index(code : String) -> Int? {
+fn currency_index(code : String) -> Int32? {
   let mut index = 0
   while index < currency_codes.length() {
     if currency_codes[index] == code {
@@ -37,7 +37,10 @@ fn currency_index(code : String) -> Int? {
 }
 
 ///|
-fn currency_override(overrides : Array[(Int, String)], index : Int) -> String? {
+fn currency_override(
+  overrides : Array[(Int32, String)],
+  index : Int32,
+) -> String? {
   for entry in overrides {
     if entry.0 == index {
       return Some(entry.1)

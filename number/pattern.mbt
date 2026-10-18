@@ -3,13 +3,13 @@
 priv struct NumberSection {
   prefix : String
   suffix : String
-  min_integer : Int
-  min_fraction : Int
-  max_fraction : Int
-  group_primary : Int
-  group_secondary : Int
+  min_integer : Int32
+  min_fraction : Int32
+  max_fraction : Int32
+  group_primary : Int32
+  group_secondary : Int32
   scientific : Bool
-  exponent_min_digits : Int
+  exponent_min_digits : Int32
   exponent_plus : Bool
 }
 
@@ -21,18 +21,18 @@ priv struct NumberPattern {
   negative_prefix : String
   negative_suffix : String
   has_negative : Bool
-  min_integer : Int
-  min_fraction : Int
-  max_fraction : Int
-  group_primary : Int
-  group_secondary : Int
+  min_integer : Int32
+  min_fraction : Int32
+  max_fraction : Int32
+  group_primary : Int32
+  group_secondary : Int32
   scientific : Bool
-  exponent_min_digits : Int
+  exponent_min_digits : Int32
   exponent_plus : Bool
 }
 
 ///|
-fn repeat_char(field : Char, count : Int) -> String {
+fn repeat_char(field : Char, count : Int32) -> String {
   let builder = StringBuilder::new()
   let mut index = 0
   while index < count {
@@ -56,8 +56,8 @@ fn token_text(token : @pattern.PatternToken) -> String {
 ///|
 fn tokens_text(
   tokens : Array[@pattern.PatternToken],
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> String {
   let builder = StringBuilder::new()
   let mut index = start
@@ -87,10 +87,10 @@ fn is_comma(token : @pattern.PatternToken) -> Bool {
 ///|
 fn count_placeholders(
   tokens : Array[@pattern.PatternToken],
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   only_zeros : Bool,
-) -> Int {
+) -> Int32 {
   let mut count = 0
   let mut index = start
   while index < end {
@@ -109,10 +109,10 @@ fn count_placeholders(
 ///|
 fn parse_integer_grouping(
   tokens : Array[@pattern.PatternToken],
-  start : Int,
-  end : Int,
-) -> (Int, Int) {
-  let segments : Array[Int] = []
+  start : Int32,
+  end : Int32,
+) -> (Int32, Int32) {
+  let segments : Array[Int32] = []
   let mut segment_length = 0
   let mut saw_comma = false
   let mut index = start

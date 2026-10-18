@@ -18,7 +18,7 @@ pub fn split_decimal(text : String) -> (String, String) {
 }
 
 ///|
-fn parse_exponent_digits(text : String) -> Int {
+fn parse_exponent_digits(text : String) -> Int32 {
   let mut value = 0
   for c in text.iter() {
     if c.is_ascii_digit() {
@@ -29,7 +29,7 @@ fn parse_exponent_digits(text : String) -> Int {
 }
 
 ///|
-fn zero_string(count : Int) -> String {
+fn zero_string(count : Int32) -> String {
   let builder = StringBuilder::new()
   for _ in 0..<count {
     builder.write_stringview("0")
@@ -76,7 +76,7 @@ fn increment_decimal(int_part : String, frac_part : String) -> (String, String) 
       digits[index] = '0'
       index = index - 1
     } else {
-      digits[index] = Int::unsafe_to_char(value + 49)
+      digits[index] = Int32::unsafe_to_char(value + 49)
       carry = false
     }
   }
@@ -96,7 +96,10 @@ fn increment_decimal(int_part : String, frac_part : String) -> (String, String) 
 ///|
 /// Round a non-negative decimal string to `max_fraction` digits using
 /// round-half-away-from-zero, matching the default `Intl` behavior.
-pub fn round_to_fraction(raw : String, max_fraction : Int) -> (String, String) {
+pub fn round_to_fraction(
+  raw : String,
+  max_fraction : Int32,
+) -> (String, String) {
   let parts = expand_decimal(raw)
   let int_part = parts.0
   let frac_part = parts.1

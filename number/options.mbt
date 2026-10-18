@@ -1,21 +1,21 @@
 ///|
 /// Per-call overrides for number formatting.
 pub(all) struct NumberOptions {
-  min_fraction : Int?
-  max_fraction : Int?
+  min_fraction : Int32?
+  max_fraction : Int32?
   grouping : Bool
 }
 
 ///|
 pub fn NumberOptions::default() -> NumberOptions {
-  { min_fraction: None, max_fraction: None, grouping: true }
+  { min_fraction: None, max_fraction: None, grouping: true, }
 }
 
 ///|
 /// Fix the number of fraction digits, e.g. `with_fraction_digits(2, 2)` for money.
 pub fn NumberOptions::with_fraction_digits(
-  min : Int,
-  max : Int,
+  min : Int32,
+  max : Int32,
 ) -> NumberOptions {
   {
     min_fraction: Some(if min < 0 { 0 } else { min }),
@@ -52,14 +52,14 @@ pub(all) struct CurrencyOptions {
 
 ///|
 pub fn CurrencyOptions::default() -> CurrencyOptions {
-  { display: Symbol, accounting: false }
+  { display: Symbol, accounting: false, }
 }
 
 ///|
 pub fn CurrencyOptions::with_display(
   display : CurrencyDisplay,
 ) -> CurrencyOptions {
-  { display, accounting: false }
+  { display, accounting: false, }
 }
 
 ///|
@@ -67,5 +67,5 @@ pub fn CurrencyOptions::with_display(
 pub fn CurrencyOptions::with_accounting(
   self : CurrencyOptions,
 ) -> CurrencyOptions {
-  { display: self.display, accounting: true }
+  { display: self.display, accounting: true, }
 }

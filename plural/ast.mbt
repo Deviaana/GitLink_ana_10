@@ -33,7 +33,7 @@ pub enum Condition {
   Never
   And(Condition, Condition)
   Or(Condition, Condition)
-  Relation(Operand, Int?, Relation, Array[Range])
+  Relation(Operand, Int32?, Relation, Array[Range])
 }
 
 ///|

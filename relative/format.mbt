@@ -51,7 +51,7 @@ fn resolve_relative_data(locale : @core.Locale) -> @data.RelativeData {
 
 ///|
 fn empty_unit() -> @data.RelativeUnitData {
-  { future: [], past: [], zero: None, one_future: None, one_past: None }
+  { future: [], past: [], zero: None, one_future: None, one_past: None, }
 }
 
 ///|

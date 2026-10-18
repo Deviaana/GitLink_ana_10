@@ -1,5 +1,5 @@
 ///|
-fn peek(tokens : Array[Token], pos : Int) -> Token {
+fn peek(tokens : Array[Token], pos : Int32) -> Token {
   if pos < tokens.length() {
     tokens[pos]
   } else {
@@ -8,7 +8,7 @@ fn peek(tokens : Array[Token], pos : Int) -> Token {
 }
 
 ///|
-fn parse_or(tokens : Array[Token], pos : Int) -> (Condition?, Int) {
+fn parse_or(tokens : Array[Token], pos : Int32) -> (Condition?, Int32) {
   let first = parse_and(tokens, pos)
   let mut acc = first.0
   let mut next = first.1
@@ -35,7 +35,7 @@ fn parse_or(tokens : Array[Token], pos : Int) -> (Condition?, Int) {
 }
 
 ///|
-fn parse_and(tokens : Array[Token], pos : Int) -> (Condition?, Int) {
+fn parse_and(tokens : Array[Token], pos : Int32) -> (Condition?, Int32) {
   let first = parse_relation(tokens, pos)
   let mut acc = first.0
   let mut next = first.1
@@ -62,13 +62,13 @@ fn parse_and(tokens : Array[Token], pos : Int) -> (Condition?, Int) {
 }
 
 ///|
-fn parse_relation(tokens : Array[Token], pos : Int) -> (Condition?, Int) {
+fn parse_relation(tokens : Array[Token], pos : Int32) -> (Condition?, Int32) {
   let operand = match peek(tokens, pos) {
     OperandTok(value) => value
     _ => return (None, pos)
   }
   let mut next = pos + 1
-  let mut modulus : Int? = None
+  let mut modulus : Int32? = None
   match peek(tokens, next) {
     Percent => {
       next = next + 1
@@ -138,7 +138,7 @@ fn parse_relation(tokens : Array[Token], pos : Int) -> (Condition?, Int) {
       }
       _ => ()
     }
-    ranges.push({ low, high })
+    ranges.push({ low, high, })
     match peek(tokens, next) {
       Comma => next = next + 1
       _ => parsing = false
@@ -196,5 +196,5 @@ pub fn PluralRules::new(language : String, ordinal? : Bool) -> PluralRules {
   let use_ordinal = ordinal.unwrap_or(false)
   let data = resolve_plural_data(language)
   let source = if use_ordinal { data.ordinal } else { data.cardinal }
-  { ordinal: use_ordinal, rules: compile_rules(source) }
+  { ordinal: use_ordinal, rules: compile_rules(source), }
 }

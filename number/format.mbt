@@ -62,7 +62,7 @@ priv struct CurrencyReplacement {
 ///|
 fn CurrencyReplacement::text_for_markers(
   self : CurrencyReplacement,
-  count : Int,
+  count : Int32,
 ) -> String {
   match count {
     1 => self.display
@@ -75,7 +75,7 @@ fn CurrencyReplacement::text_for_markers(
 ///|
 fn CurrencyReplacement::needs_spacing(
   self : CurrencyReplacement,
-  count : Int,
+  count : Int32,
 ) -> Bool {
   match count {
     1 => self.alpha_display
@@ -143,7 +143,7 @@ fn replace_currency(
 }
 
 ///|
-fn trim_fraction(frac_digits : String, min_fraction : Int) -> String {
+fn trim_fraction(frac_digits : String, min_fraction : Int32) -> String {
   let mut result = frac_digits
   while result.length() > min_fraction && result.has_suffix("0") {
     result = result[0:result.length() - 1].to_owned()
@@ -157,8 +157,8 @@ fn trim_fraction(frac_digits : String, min_fraction : Int) -> String {
 ///|
 fn format_digits_text(
   raw : String,
-  max_fraction : Int,
-  min_fraction : Int,
+  max_fraction : Int32,
+  min_fraction : Int32,
 ) -> (String, String) {
   let max_clamped = if max_fraction > 15 {
     15
@@ -181,16 +181,16 @@ fn format_digits_text(
 ///|
 fn format_digits(
   value : Double,
-  max_fraction : Int,
-  min_fraction : Int,
+  max_fraction : Int32,
+  min_fraction : Int32,
 ) -> (String, String) {
   format_digits_text(value.to_string(), max_fraction, min_fraction)
 }
 
 ///|
 fn format_exponent(
-  exponent : Int,
-  min_digits : Int,
+  exponent : Int32,
+  min_digits : Int32,
   always_plus : Bool,
   data : @data.NumberData,
 ) -> String {
@@ -208,9 +208,9 @@ fn format_exponent(
 fn scientific_digits(
   value : Double,
   data : @data.NumberData,
-  max_fraction : Int,
-  min_fraction : Int,
-  exponent_min_digits : Int,
+  max_fraction : Int32,
+  min_fraction : Int32,
+  exponent_min_digits : Int32,
   exponent_plus : Bool,
 ) -> (String, String, String) {
   let max_clamped = if max_fraction > 15 {
@@ -287,15 +287,15 @@ fn scientific_digits(
 ///|
 fn group_digits(
   digits : String,
-  primary : Int,
-  secondary : Int,
+  primary : Int32,
+  secondary : Int32,
   separator : String,
 ) -> String {
   let length = digits.length()
   if primary <= 0 || length <= primary {
     return digits
   }
-  let breaks : Array[Int] = []
+  let breaks : Array[Int32] = []
   let step = if secondary > 0 { secondary } else { primary }
   let mut position = length - primary
   while position > 0 {
@@ -322,7 +322,7 @@ fn format_core_result(
 ) -> NumberFormatResult {
   let data = resolve_number_data(locale)
   if value.is_nan() {
-    return { text: data.nan, integer_digits: "", fraction_digits: "" }
+    return { text: data.nan, integer_digits: "", fraction_digits: "", }
   }
   if value.is_inf() {
     let text = if value < 0.0 {
@@ -330,7 +330,7 @@ fn format_core_result(
     } else {
       data.infinity
     }
-    return { text, integer_digits: "", fraction_digits: "" }
+    return { text, integer_digits: "", fraction_digits: "", }
   }
   let negative = value < 0.0
   let absolute = if negative { -value } else { value }
@@ -388,7 +388,7 @@ fn format_core_result(
     text = text + data.decimal + frac_digits
   }
   text = text + exponent_text + suffix
-  { text, integer_digits: int_digits, fraction_digits: frac_digits }
+  { text, integer_digits: int_digits, fraction_digits: frac_digits, }
 }
 
 ///|
@@ -403,7 +403,7 @@ fn format_core(
 }
 
 ///|
-fn decimal_order(value : Double) -> Int {
+fn decimal_order(value : Double) -> Int32 {
   let expanded = @decimal.expand_decimal(value.to_string())
   let digits = expanded.0 + expanded.1
   let mut first = 0
@@ -418,8 +418,8 @@ fn decimal_order(value : Double) -> Int {
 }
 
 ///|
-fn compact_magnitude(data : @data.NumberData, value_order : Int) -> Int? {
-  let mut selected : Int? = None
+fn compact_magnitude(data : @data.NumberData, value_order : Int32) -> Int32? {
+  let mut selected : Int32? = None
   for entry in data.compact_patterns {
     let order = entry.0
     if order <= value_order {
@@ -435,7 +435,7 @@ fn compact_magnitude(data : @data.NumberData, value_order : Int) -> Int? {
 ///|
 fn compact_pattern(
   data : @data.NumberData,
-  magnitude : Int,
+  magnitude : Int32,
   category : String,
 ) -> String? {
   for entry in data.compact_plural_patterns {
@@ -452,7 +452,7 @@ fn compact_pattern(
 }
 
 ///|
-fn shift_decimal_text(raw : String, shift : Int) -> String {
+fn shift_decimal_text(raw : String, shift : Int32) -> String {
   let parts = @decimal.expand_decimal(raw)
   let digits = parts.0 + parts.1
   let point = parts.0.length() + shift
@@ -466,7 +466,7 @@ fn shift_decimal_text(raw : String, shift : Int) -> String {
 }
 
 ///|
-fn compact_max_fraction(section : NumberPattern) -> Int {
+fn compact_max_fraction(section : NumberPattern) -> Int32 {
   if section.max_fraction > 0 {
     section.max_fraction
   } else if section.min_integer == 1 {
@@ -592,7 +592,7 @@ pub fn format_scientific(
   let data = resolve_number_data(locale)
   let resolved = match options {
     Some(value) => value
-    None => { min_fraction: None, max_fraction: Some(3), grouping: true }
+    None => { min_fraction: None, max_fraction: Some(3), grouping: true, }
   }
   format_core(value, locale, data.scientific_pattern, resolved, None)
 }
@@ -648,8 +648,8 @@ fn make_currency_replacement(
   amount : Double,
   locale : @core.Locale,
   display : CurrencyDisplay,
-  min_fraction : Int,
-  max_fraction : Int,
+  min_fraction : Int32,
+  max_fraction : Int32,
 ) -> CurrencyReplacement {
   let upper = code.to_upper()
   let digits = format_digits(amount.abs(), max_fraction, min_fraction)
@@ -689,8 +689,8 @@ fn format_currency_name(
   locale : @core.Locale,
   data : @data.NumberData,
   options : NumberOptions,
-  min_fraction : Int,
-  max_fraction : Int,
+  min_fraction : Int32,
+  max_fraction : Int32,
 ) -> String {
   let upper = code.to_upper()
   let digits = format_digits(amount.abs(), max_fraction, min_fraction)

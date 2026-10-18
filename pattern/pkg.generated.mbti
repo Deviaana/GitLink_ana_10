@@ -18,4 +18,3 @@ pub(all) enum PatternToken {
 // Type aliases
 
 // Traits
-

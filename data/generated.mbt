@@ -1253,7 +1253,7 @@ pub fn relative_data(anchor : String) -> RelativeData? {
 }
 
 ///|
-pub fn currency_digits(code : String) -> Int {
+pub fn currency_digits(code : String) -> Int32 {
   match code.to_upper() {
     "ADP" => 0
     "AFN" => 0

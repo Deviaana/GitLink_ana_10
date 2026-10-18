@@ -19,22 +19,22 @@ pub(all) enum TimeStyle {
 ///|
 /// A civil date-time without timezone information.
 pub(all) struct DateTime {
-  year : Int
-  month : Int
-  day : Int
-  hour : Int
-  minute : Int
-  second : Int
+  year : Int32
+  month : Int32
+  day : Int32
+  hour : Int32
+  minute : Int32
+  second : Int32
 }
 
 ///|
 pub fn DateTime::new(
-  year : Int,
-  month : Int,
-  day : Int,
-  hour? : Int,
-  minute? : Int,
-  second? : Int,
+  year : Int32,
+  month : Int32,
+  day : Int32,
+  hour? : Int32,
+  minute? : Int32,
+  second? : Int32,
 ) -> DateTime {
   {
     year,
@@ -48,7 +48,7 @@ pub fn DateTime::new(
 
 ///|
 /// Days since 1970-01-01 (Howard Hinnant's civil-from-days algorithm).
-fn days_from_civil(year : Int, month : Int, day : Int) -> Int {
+fn days_from_civil(year : Int32, month : Int32, day : Int32) -> Int32 {
   let adjusted_year = if month <= 2 { year - 1 } else { year }
   let era = if adjusted_year >= 0 {
     adjusted_year / 400
@@ -67,7 +67,7 @@ fn days_from_civil(year : Int, month : Int, day : Int) -> Int {
 
 ///|
 /// Weekday index, 0 = Sunday and 6 = Saturday.
-pub fn DateTime::weekday(self : DateTime) -> Int {
+pub fn DateTime::weekday(self : DateTime) -> Int32 {
   let days = days_from_civil(self.year, self.month, self.day)
   let remainder = days % 7
   let normalized = if remainder < 0 { remainder + 7 } else { remainder }

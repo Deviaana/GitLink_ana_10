@@ -58,4 +58,3 @@ pub fn NumberOptions::without_grouping(Self) -> Self
 // Type aliases
 
 // Traits
-
