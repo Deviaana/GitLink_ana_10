@@ -33,3 +33,39 @@ pub fn NumberOptions::without_grouping(self : NumberOptions) -> NumberOptions {
     grouping: false,
   }
 }
+
+///|
+/// How the currency is rendered in a number pattern.
+pub(all) enum CurrencyDisplay {
+  Symbol
+  Code
+  Name
+  NarrowSymbol
+}
+
+///|
+/// Currency-specific rendering options.
+pub(all) struct CurrencyOptions {
+  display : CurrencyDisplay
+  accounting : Bool
+}
+
+///|
+pub fn CurrencyOptions::default() -> CurrencyOptions {
+  { display: Symbol, accounting: false }
+}
+
+///|
+pub fn CurrencyOptions::with_display(
+  display : CurrencyDisplay,
+) -> CurrencyOptions {
+  { display, accounting: false }
+}
+
+///|
+/// Use the locale accounting pattern for negative amounts.
+pub fn CurrencyOptions::with_accounting(
+  self : CurrencyOptions,
+) -> CurrencyOptions {
+  { display: self.display, accounting: true }
+}

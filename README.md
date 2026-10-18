@@ -30,7 +30,7 @@ Early alpha, but the core pipeline is implemented and tested.
 | --- | --- | --- |
 | Locale parsing | BCP 47 subset | language / script / region + fallback chain |
 | Decimal | Yes | CLDR patterns, grouping, min/max fraction digits |
-| Currency | Yes | CLDR symbol placement + ISO 4217 fraction digits |
+| Currency | Yes | symbol/code/name/narrow display, accounting patterns, ISO 4217 digits |
 | Percent | Yes | CLDR percent pattern |
 | Plural rules | Yes | cardinal + ordinal, parser for the CLDR rule grammar |
 | Date / time | Yes | CLDR styles and explicit patterns, Gregorian only |
@@ -68,6 +68,22 @@ let money = @number.NumberOptions::with_fraction_digits(2, 2)
 @number.format_decimal(1.0, locale, options=money)    // 1,00
 let plain = @number.NumberOptions::default().without_grouping()
 @number.format_decimal(1234567.0, locale, options=plain)
+```
+
+Currency display and accounting options:
+
+```moonbit
+let en = @core.Locale::parse("en")
+let code = @number.CurrencyOptions::with_display(@number.Code)
+@number.format_currency(1234.5, "USD", en, currency_options=code)
+// USD 1,234.50 (with CLDR currency spacing)
+
+let accounting = @number.CurrencyOptions::default().with_accounting()
+@number.format_currency(-1234.5, "USD", en, currency_options=accounting)
+// ($1,234.50)
+
+@number.format_currency_with_pattern(1234.5, "USD", en, "¤¤#,##0.00")
+// USD 1,234.50
 ```
 
 Plural selection can use the exact digits that were rendered, so `1` and `1.00`

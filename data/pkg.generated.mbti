@@ -44,8 +44,13 @@ pub(all) struct NumberData {
   percent_pattern : String
   currency_pattern : String
   accounting_pattern : String
+  currency_spacing : String
   currency_symbols : Array[(String, String)]
+  currency_narrow_symbols : Array[(String, String)]
+  currency_names : Array[(String, String, String)]
 }
+pub fn NumberData::currency_name(Self, String, String) -> String
+pub fn NumberData::currency_narrow_symbol(Self, String) -> String
 pub fn NumberData::currency_symbol(Self, String) -> String
 
 pub(all) struct PluralData {

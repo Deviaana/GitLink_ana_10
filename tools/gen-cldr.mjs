@@ -34,6 +34,12 @@ function tupleArr(pairs) {
   return "[" + pairs.map(([k, v]) => "(" + esc(k) + ", " + esc(v) + ")").join(", ") + "]";
 }
 
+function tripleArr(triples) {
+  return "[" + triples.map(([a, b, c]) =>
+    "(" + esc(a) + ", " + esc(b) + ", " + esc(c) + ")"
+  ).join(", ") + "]";
+}
+
 function numberData(locale) {
   const json = readJson(join(cache, locale, "numbers.json"));
   const numbers = json.main[locale].numbers;
@@ -48,10 +54,20 @@ function numberData(locale) {
   } catch {
     currencies = {};
   }
-  const symbolsList = currencyCodes.map((code) => {
-    const entry = currencies[code] ?? {};
-    return [code, entry.symbol ?? entry["symbol-alt-narrow"] ?? code];
-  });
+  const currencyEntries = currencyCodes.map((code) => [code, currencies[code] ?? {}]);
+  const symbolsList = currencyEntries.map(([code, entry]) => [
+    code,
+    entry.symbol ?? entry["symbol-alt-narrow"] ?? code,
+  ]);
+  const narrowSymbolsList = currencyEntries.map(([code, entry]) => [
+    code,
+    entry["symbol-alt-narrow"] ?? entry.symbol ?? code,
+  ]);
+  const namesList = currencyEntries.map(([code, entry]) => [
+    code,
+    entry["displayName-count-one"] ?? entry.displayName ?? entry["displayName-count-other"] ?? code,
+    entry["displayName-count-other"] ?? entry.displayName ?? entry["displayName-count-one"] ?? code,
+  ]);
   return {
     decimal: symbols.decimal ?? ".",
     group: symbols.group ?? ",",
@@ -64,7 +80,13 @@ function numberData(locale) {
     percent_pattern: percent,
     currency_pattern: currency.standard ?? "¤#,##0.00",
     accounting_pattern: currency.accounting ?? "¤#,##0.00;(¤#,##0.00)",
+    currency_spacing:
+      currency.currencySpacing?.beforeCurrency?.insertBetween ??
+      currency.currencySpacing?.afterCurrency?.insertBetween ??
+      "\u00A0",
     currency_symbols: symbolsList,
+    currency_narrow_symbols: narrowSymbolsList,
+    currency_names: namesList,
   };
 }
 
@@ -134,7 +156,10 @@ function emitNumber(locale, d) {
     `  percent_pattern: ${esc(d.percent_pattern)},`,
     `  currency_pattern: ${esc(d.currency_pattern)},`,
     `  accounting_pattern: ${esc(d.accounting_pattern)},`,
+    `  currency_spacing: ${esc(d.currency_spacing)},`,
     `  currency_symbols: ${tupleArr(d.currency_symbols)},`,
+    `  currency_narrow_symbols: ${tupleArr(d.currency_narrow_symbols)},`,
+    `  currency_names: ${tripleArr(d.currency_names)},`,
     `}`,
     ``,
   ].join("\n");

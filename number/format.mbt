@@ -24,7 +24,10 @@ fn fallback_number_data() -> @data.NumberData {
         percent_pattern: "#,##0%",
         currency_pattern: "¤#,##0.00",
         accounting_pattern: "¤#,##0.00;(¤#,##0.00)",
+        currency_spacing: "\u{00A0}",
         currency_symbols: [],
+        currency_narrow_symbols: [],
+        currency_names: [],
       }
   }
 }
@@ -41,8 +44,126 @@ fn resolve_number_data(locale : @core.Locale) -> @data.NumberData {
 }
 
 ///|
-fn replace_currency(text : String, symbol : String) -> String {
-  text.replace_all(old="¤", new=symbol)
+priv struct CurrencyReplacement {
+  display : String
+  narrow : String
+  code : String
+  name : String
+  spacing : String
+  alpha_display : Bool
+  alpha_narrow : Bool
+}
+
+///|
+fn CurrencyReplacement::text_for_markers(
+  self : CurrencyReplacement,
+  count : Int,
+) -> String {
+  match count {
+    1 => self.display
+    2 => self.code
+    3 => self.name
+    _ => self.narrow
+  }
+}
+
+///|
+fn CurrencyReplacement::needs_spacing(
+  self : CurrencyReplacement,
+  count : Int,
+) -> Bool {
+  match count {
+    1 => self.alpha_display
+    2 | 3 => true
+    _ => self.alpha_narrow
+  }
+}
+
+///|
+fn has_ascii_alphabetic(text : String) -> Bool {
+  for c in text.iter() {
+    if c.is_ascii_alphabetic() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn is_digit_placeholder(c : Char) -> Bool {
+  c == '0' || c == '#'
+}
+
+///|
+fn replace_currency(
+  text : String,
+  currency : CurrencyReplacement,
+  before_number : Bool,
+) -> String {
+  let chars = text.to_array()
+  let builder = StringBuilder::new()
+  let mut index = 0
+  while index < chars.length() {
+    if chars[index] == '¤' {
+      let start = index
+      while index < chars.length() && chars[index] == '¤' {
+        index = index + 1
+      }
+      let count = index - start
+      let alpha = currency.needs_spacing(count)
+      if alpha &&
+        (
+          (start > 0 && is_digit_placeholder(chars[start - 1])) ||
+          (!before_number && start == 0)
+        ) {
+        builder.write_stringview(currency.spacing)
+      }
+      builder.write_stringview(currency.text_for_markers(count))
+      if alpha &&
+        (
+          (index < chars.length() && is_digit_placeholder(chars[index])) ||
+          (before_number && index == chars.length())
+        ) {
+        builder.write_stringview(currency.spacing)
+      }
+    } else {
+      builder.write_object(chars[index])
+      index = index + 1
+    }
+  }
+  builder.to_string()
+}
+
+///|
+fn format_digits(
+  value : Double,
+  max_fraction : Int,
+  min_fraction : Int,
+) -> (String, String) {
+  let max_clamped = if max_fraction > 15 {
+    15
+  } else if max_fraction < 0 {
+    0
+  } else {
+    max_fraction
+  }
+  let min_clamped = if min_fraction > max_clamped {
+    max_clamped
+  } else if min_fraction < 0 {
+    0
+  } else {
+    min_fraction
+  }
+  let rounded = @decimal.round_to_fraction(value.to_string(), max_clamped)
+  let int_digits = rounded.0
+  let mut frac_digits = rounded.1
+  while frac_digits.length() > min_clamped && frac_digits.has_suffix("0") {
+    frac_digits = frac_digits[0:frac_digits.length() - 1].to_owned()
+  }
+  if frac_digits.length() < min_clamped {
+    frac_digits = frac_digits.pad_end(min_clamped, '0')
+  }
+  (int_digits, frac_digits)
 }
 
 ///|
@@ -79,7 +200,7 @@ fn format_core_result(
   locale : @core.Locale,
   pattern : String,
   options : NumberOptions,
-  currency_symbol : String?,
+  currency : CurrencyReplacement?,
 ) -> NumberFormatResult {
   let data = resolve_number_data(locale)
   if value.is_nan() {
@@ -96,36 +217,13 @@ fn format_core_result(
   let negative = value < 0.0
   let absolute = if negative { -value } else { value }
   let parsed = parse_pattern(pattern)
-  let max_fraction = options.max_fraction.unwrap_or(parsed.max_fraction)
-  let min_fraction = options.min_fraction.unwrap_or(parsed.min_fraction)
-  let max_fraction_clamped = if max_fraction > 15 {
-    15
-  } else if max_fraction < 0 {
-    0
-  } else {
-    max_fraction
-  }
-  let min_fraction_clamped = if min_fraction > max_fraction_clamped {
-    max_fraction_clamped
-  } else if min_fraction < 0 {
-    0
-  } else {
-    min_fraction
-  }
-  let rounded = @decimal.round_to_fraction(
-    absolute.to_string(),
-    max_fraction_clamped,
+  let parts = format_digits(
+    absolute,
+    options.max_fraction.unwrap_or(parsed.max_fraction),
+    options.min_fraction.unwrap_or(parsed.min_fraction),
   )
-  let mut int_digits = rounded.0
-  let mut frac_digits = rounded.1
-  while frac_digits.length() > min_fraction_clamped &&
-        frac_digits.has_suffix("0") {
-    frac_digits = frac_digits[0:frac_digits.length() - 1].to_owned()
-  }
-  if frac_digits.length() < min_fraction_clamped {
-    frac_digits = frac_digits.pad_end(min_fraction_clamped, '0')
-  }
-  int_digits = int_digits.pad_start(parsed.min_integer, '0')
+  let int_digits = parts.0.pad_start(parsed.min_integer, '0')
+  let frac_digits = parts.1
   let grouped = if options.grouping {
     group_digits(
       int_digits,
@@ -148,10 +246,10 @@ fn format_core_result(
   } else {
     parsed.positive_suffix
   }
-  match currency_symbol {
-    Some(symbol) => {
-      prefix = replace_currency(prefix, symbol)
-      suffix = replace_currency(suffix, symbol)
+  match currency {
+    Some(info) => {
+      prefix = replace_currency(prefix, info, true)
+      suffix = replace_currency(suffix, info, false)
     }
     None => ()
   }
@@ -169,9 +267,9 @@ fn format_core(
   locale : @core.Locale,
   pattern : String,
   options : NumberOptions,
-  currency_symbol : String?,
+  currency : CurrencyReplacement?,
 ) -> String {
-  format_core_result(value, locale, pattern, options, currency_symbol).text
+  format_core_result(value, locale, pattern, options, currency).text
 }
 
 ///|
@@ -219,28 +317,123 @@ pub fn format_percent(
 }
 
 ///|
+fn make_currency_replacement(
+  data : @data.NumberData,
+  code : String,
+  amount : Double,
+  locale : @core.Locale,
+  display : CurrencyDisplay,
+  min_fraction : Int,
+  max_fraction : Int,
+) -> CurrencyReplacement {
+  let upper = code.to_upper()
+  let digits = format_digits(amount.abs(), max_fraction, min_fraction)
+  let category = @plural.PluralRules::cached(locale.language).select_with_digits(
+    digits.0,
+    digits.1,
+  )
+  let symbol = data.currency_symbol(upper)
+  let narrow = data.currency_narrow_symbol(upper)
+  let name = data.currency_name(upper, category)
+  let shown = match display {
+    Symbol => symbol
+    Code => upper
+    Name => name
+    NarrowSymbol => narrow
+  }
+  let alpha_display = match display {
+    Symbol => has_ascii_alphabetic(shown)
+    NarrowSymbol => has_ascii_alphabetic(shown)
+    Code | Name => true
+  }
+  {
+    display: shown,
+    narrow,
+    code: upper,
+    name,
+    spacing: data.currency_spacing,
+    alpha_display,
+    alpha_narrow: has_ascii_alphabetic(narrow),
+  }
+}
+
+///|
+fn format_currency_impl(
+  amount : Double,
+  code : String,
+  locale : @core.Locale,
+  pattern : String,
+  options : NumberOptions,
+  currency_options : CurrencyOptions,
+) -> String {
+  let data = resolve_number_data(locale)
+  let digits = @data.currency_digits(code)
+  let min_fraction = options.min_fraction.unwrap_or(digits)
+  let max_fraction = options.max_fraction.unwrap_or(digits)
+  let with_money_digits : NumberOptions = {
+    min_fraction: Some(min_fraction),
+    max_fraction: Some(max_fraction),
+    grouping: options.grouping,
+  }
+  let currency = make_currency_replacement(
+    data,
+    code,
+    amount,
+    locale,
+    currency_options.display,
+    min_fraction,
+    max_fraction,
+  )
+  format_core(amount, locale, pattern, with_money_digits, Some(currency))
+}
+
+///|
 /// Format an amount in the given ISO 4217 currency code.
+///
+/// `currency_options` controls symbol/code/name display and accounting
+/// formatting for negative amounts.
 pub fn format_currency(
   amount : Double,
   code : String,
   locale : @core.Locale,
   options? : NumberOptions,
+  currency_options? : CurrencyOptions,
 ) -> String {
   let data = resolve_number_data(locale)
-  let symbol = data.currency_symbol(code)
-  let resolved = options.unwrap_or(NumberOptions::default())
-  let digits = @data.currency_digits(code)
-  let with_money_digits : NumberOptions = {
-    min_fraction: Some(resolved.min_fraction.unwrap_or(digits)),
-    max_fraction: Some(resolved.max_fraction.unwrap_or(digits)),
-    grouping: resolved.grouping,
+  let currency_opts = currency_options.unwrap_or(CurrencyOptions::default())
+  let pattern = if currency_opts.accounting && amount < 0.0 {
+    data.accounting_pattern
+  } else {
+    data.currency_pattern
   }
-  format_core(
+  format_currency_impl(
     amount,
+    code,
     locale,
-    data.currency_pattern,
-    with_money_digits,
-    Some(symbol),
+    pattern,
+    options.unwrap_or(NumberOptions::default()),
+    currency_opts,
+  )
+}
+
+///|
+/// Format a currency amount with an explicit pattern, including `¤`, `¤¤`,
+/// `¤¤¤` and `¤¤¤¤` currency markers.
+pub fn format_currency_with_pattern(
+  amount : Double,
+  code : String,
+  locale : @core.Locale,
+  pattern : String,
+  options? : NumberOptions,
+  currency_options? : CurrencyOptions,
+) -> String {
+  format_currency_impl(
+    amount,
+    code,
+    locale,
+    pattern,
+    options.unwrap_or(NumberOptions::default()),
+    currency_options.unwrap_or(CurrencyOptions::default()),
   )
 }
 

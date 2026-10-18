@@ -119,3 +119,74 @@ test "decimal result exposes rendered digits" {
   assert_eq(padded.integer_digits, "1")
   assert_eq(padded.fraction_digits, "00")
 }
+
+///|
+test "currency display modes" {
+  let en = @core.Locale::parse("en")
+  let code = CurrencyOptions::with_display(Code)
+  let name = CurrencyOptions::with_display(Name)
+  let narrow = CurrencyOptions::with_display(NarrowSymbol)
+  let no_fraction = NumberOptions::with_fraction_digits(0, 0)
+  assert_eq(
+    format_currency(1234.5, "USD", en, currency_options=code),
+    "USD\u{00A0}1,234.50",
+  )
+  assert_eq(
+    format_currency(1234.5, "USD", en, currency_options=name),
+    "US dollars\u{00A0}1,234.50",
+  )
+  assert_eq(
+    format_currency(1.0, "USD", en, options=no_fraction, currency_options=name),
+    "US dollar\u{00A0}1",
+  )
+  assert_eq(
+    format_currency(1234.5, "CAD", en, currency_options=narrow),
+    "$1,234.50",
+  )
+}
+
+///|
+test "currency accounting pattern for negatives" {
+  let en = @core.Locale::parse("en")
+  let fr = @core.Locale::parse("fr")
+  let accounting = CurrencyOptions::default().with_accounting()
+  assert_eq(
+    format_currency(-1234.5, "USD", en, currency_options=accounting),
+    "($1,234.50)",
+  )
+  assert_eq(
+    format_currency(-1234.5, "USD", fr, currency_options=accounting),
+    "(1\u{202F}234,50\u{00A0}$US)",
+  )
+}
+
+///|
+test "currency marker sequences and spacing" {
+  let en = @core.Locale::parse("en")
+  assert_eq(
+    format_currency_with_pattern(1234.5, "USD", en, "¤¤#,##0.00"),
+    "USD\u{00A0}1,234.50",
+  )
+  assert_eq(
+    format_currency_with_pattern(1234.5, "USD", en, "#,##0.00¤¤"),
+    "1,234.50\u{00A0}USD",
+  )
+  assert_eq(
+    format_currency_with_pattern(1234.5, "USD", en, "¤¤¤ #,##0.00"),
+    "US dollars 1,234.50",
+  )
+  assert_eq(
+    format_currency_with_pattern(1234.5, "CAD", en, "¤¤¤¤#,##0.00"),
+    "$1,234.50",
+  )
+}
+
+///|
+test "currency names support non-latin locales" {
+  let ja = @core.Locale::parse("ja")
+  let name = CurrencyOptions::with_display(Name)
+  assert_eq(
+    format_currency(1234.5, "USD", ja, currency_options=name),
+    "米ドル\u{00A0}1,234.50",
+  )
+}

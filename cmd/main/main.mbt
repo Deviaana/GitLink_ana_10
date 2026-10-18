@@ -16,6 +16,28 @@ fn main {
     println(tag + "  " + @number.format_currency(1234.5, "USD", locale))
   }
   println("")
+  println("-- currency display modes --")
+  let en = @core.Locale::parse("en")
+  let code = @number.CurrencyOptions::with_display(@number.Code)
+  let name = @number.CurrencyOptions::with_display(@number.Name)
+  let accounting = @number.CurrencyOptions::default().with_accounting()
+  println(
+    "code        " +
+    @number.format_currency(1234.5, "USD", en, currency_options=code),
+  )
+  println(
+    "name        " +
+    @number.format_currency(1234.5, "USD", en, currency_options=name),
+  )
+  println(
+    "accounting  " +
+    @number.format_currency(-1234.5, "USD", en, currency_options=accounting),
+  )
+  println(
+    "pattern     " +
+    @number.format_currency_with_pattern(1234.5, "USD", en, "¤¤#,##0.00"),
+  )
+  println("")
   println("-- percent 0.125 --")
   for tag in tags {
     let locale = @core.Locale::parse(tag)

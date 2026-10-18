@@ -12,7 +12,10 @@ pub(all) struct NumberData {
   percent_pattern : String
   currency_pattern : String
   accounting_pattern : String
+  currency_spacing : String
   currency_symbols : Array[(String, String)]
+  currency_narrow_symbols : Array[(String, String)]
+  currency_names : Array[(String, String, String)]
 }
 
 ///|
@@ -22,6 +25,37 @@ pub fn NumberData::currency_symbol(self : NumberData, code : String) -> String {
   for entry in self.currency_symbols {
     if entry.0 == upper {
       return entry.1
+    }
+  }
+  upper
+}
+
+///|
+/// Look up a narrow currency symbol, falling back to the regular symbol.
+pub fn NumberData::currency_narrow_symbol(
+  self : NumberData,
+  code : String,
+) -> String {
+  let upper = code.to_upper()
+  for entry in self.currency_narrow_symbols {
+    if entry.0 == upper {
+      return entry.1
+    }
+  }
+  self.currency_symbol(upper)
+}
+
+///|
+/// Look up a currency display name for a CLDR plural category.
+pub fn NumberData::currency_name(
+  self : NumberData,
+  code : String,
+  category : String,
+) -> String {
+  let upper = code.to_upper()
+  for entry in self.currency_names {
+    if entry.0 == upper {
+      return if category == "one" { entry.1 } else { entry.2 }
     }
   }
   upper
