@@ -1,81 +1,91 @@
 # moonl10n
 
-Pure MoonBit localization formatting kernel backed by Unicode CLDR data.
+纯 MoonBit 实现、基于 Unicode CLDR 数据的本地化格式化内核。
 
-`moonl10n` turns `(locale, value, options)` into a locale-correct string without
-depending on a JavaScript host. It is designed for WASM-GC, JS and Native
-targets, with formatting rules independent of the host runtime.
+`moonl10n` 把 `(locale, value, options)` 转换为符合区域习惯的字符串，不依赖
+JavaScript 宿主的 `Intl`。项目面向 WASM-GC、JS 与 Native 后端，格式化规则由库内
+数据决定，不依赖运行时环境提供国际化能力。
 
-```text
-en  1,234,567.891        $1,234.50        Oct 18, 2026        3 days ago
-zh  1,234,567.891        US$1,234.50      2026年10月18日       3天前
-de  1.234.567,891        1.234,50 $       18.10.2026          vor 3 Tagen
-ja  1,234,567.891        $1,234.50        2026/10/18          3 日前
-fr  1 234 567,891        1 234,50 $US     18 oct. 2026        il y a 3 jours
-ar  1,234,567.891        ‏1,234.50 US$     18‏/10‏/2026        قبل 3 أيام
-```
+| 区域 | 数字 | 货币 | 日期 | 相对时间 |
+| --- | --- | --- | --- | --- |
+| `en` | 1,234,567.891 | $1,234.50 | Oct 18, 2026 | 3 days ago |
+| `zh` | 1,234,567.891 | US$1,234.50 | 2026年10月18日 | 3天前 |
+| `de` | 1.234.567,891 | 1.234,50 $ | 18.10.2026 | vor 3 Tagen |
+| `ja` | 1,234,567.891 | $1,234.50 | 2026/10/18 | 3 日前 |
+| `fr` | 1 234 567,891 | 1 234,50 $US | 18 oct. 2026 | il y a 3 jours |
 
-## Why
+## 为什么需要 moonl10n
 
-MoonBit's existing i18n work focuses on message catalogs (MF2) and delegates
-number/date rendering to the host `Intl`. That fallback disappears on Native and
-on pure WASM targets. `moonl10n` fills that layer: pure functions, no IO, no FFI,
-CLDR conformance data as the source of truth.
+MoonBit 现有的 i18n 工作主要解决消息目录（MF2）问题，数字、日期、货币和复数的
+最终渲染仍然经常交给宿主 `Intl`。这种方式在浏览器里可以使用，但编译到 Native、
+WASM-GC 或嵌入式环境后，宿主兜底不再存在，应用会突然失去格式化能力。
 
-## Status
+`moonl10n` 补上的正是这一层：
 
-Early alpha, but the core pipeline is implemented and tested.
+- 纯函数 API，不进行 IO，不依赖 FFI。
+- 以 Unicode CLDR 数据作为唯一事实来源。
+- 同一套规则在 WASM-GC、JS 和 Native 后端保持一致。
+- 可被图表、文档排版、UI 组件、日志系统、账单和后台服务复用。
 
-| Area | Implemented | Notes |
+## 当前能力
+
+项目当前处于早期 alpha 阶段，核心链路已经实现并通过测试。
+
+| 能力 | 状态 | 说明 |
 | --- | --- | --- |
-| Locale parsing | BCP 47 subset | strict parser, variants/extensions, likely subtags, Accept-Language negotiation |
-| Decimal | Yes | CLDR patterns, grouping, fraction digits, scientific notation |
-| Currency | Yes | symbol/code/name/narrow display, accounting patterns, ISO 4217 digits |
-| Percent | Yes | CLDR percent pattern and localized percent sign |
-| Plural rules | Yes | cardinal + ordinal, parser for the CLDR rule grammar |
-| Date / time | Yes | CLDR styles, explicit patterns, date ranges, spacing-preserving output |
-| Relative time | Yes | future / past / zero, plural-aware |
-| Intl differential | Yes | 178 static fixtures across six locales |
-| Engineering | Yes | CI matrix across wasm-gc/js/native, coverage, executable examples and tagged MoonCakes releases |
-| Locales bundled | `en`, `zh`, `de`, `ja`, `fr`, `ar` | `latn` numbering system |
-| Compact notation | Yes | short CLDR patterns with plural-aware suffixes |
-| Time zones | Not yet | `z` fields use explicit skip/preserve/reject policies |
-| Non-Gregorian calendars | Not yet | |
+| Locale 解析 | 已实现 | BCP 47 子集、严格校验、variants/extensions、likely subtags、Accept-Language 协商 |
+| 十进制数字 | 已实现 | CLDR 模式、分组、最小/最大小数位、科学计数法 |
+| 货币格式化 | 已实现 | symbol/code/name/narrow 显示、accounting 模式、ISO 4217 小数位 |
+| 百分比 | 已实现 | CLDR 百分比模式与本地化百分号 |
+| 复数规则 | 已实现 | 基数与序数规则、CLDR 规则语法解析与求值 |
+| 日期与时间 | 已实现 | CLDR 风格、显式模式、日期区间、保留字面空格 |
+| 相对时间 | 已实现 | 过去/未来/当前，支持复数变化 |
+| 紧凑记数 | 已实现 | `1.2K`、`1.2万`、`1,2 Mio.` 等短格式 |
+| Intl 差分测试 | 已实现 | 6 个区域、178 条静态一致性用例 |
+| 工程化 | 已实现 | 三后端 CI、覆盖率、可执行示例、标签发布流程 |
+| 内置区域 | `en`、`zh`、`de`、`ja`、`fr`、`ar` | 当前使用 `latn` 数字系统 |
+| 时区 | 暂未实现 | `z` 字段支持跳过、保留或报错策略 |
+| 非公历日历 | 暂未实现 | 当前使用 Gregorian 日历 |
 
-## Usage
+## 快速开始
 
 ```moonbit
 let locale = @core.Locale::parse("de")
 
-@number.format_decimal(1234567.891, locale)          // 1.234.567,891
-@number.format_currency(1234.5, "EUR", locale)       // 1.234,50 €
-@number.format_percent(0.125, locale)                // 13 %
-@number.format_compact(1234567.0, locale)            // 1,2 Mio.
-@number.format_scientific(1234567.0, locale)         // 1,235E6
+@number.format_decimal(1234567.891, locale)           // 1.234.567,891
+@number.format_currency(1234.5, "EUR", locale)        // 1.234,50 €
+@number.format_percent(0.125, locale)                 // 13 %
+@number.format_compact(1234567.0, locale)             // 1,2 Mio.
+@number.format_scientific(1234567.0, locale)          // 1,235E6
 @number.format_with_pattern(12.5, locale, "0.0 'kg'") // 12,5 kg
 
 let date = @datetime.DateTime::new(2026, 10, 18, hour=17, minute=42)
-@datetime.format_date(date, locale)                  // 18.10.2026
-@datetime.format_time(date, locale)                  // 17:42
+@datetime.format_date(date, locale)                   // 18.10.2026
+@datetime.format_time(date, locale)                   // 17:42
 @datetime.format_pattern(date, locale, "EEEE, d. MMMM y")
+
 let end = @datetime.DateTime::new(2026, 10, 20)
-@datetime.format_date_range(date, end, locale)       // 18.10.2026 - 20.10.2026
+@datetime.format_date_range(date, end, locale)
+// 18.10.2026 - 20.10.2026
+
 @datetime.format_pattern_with_policy(
   date, locale, "yyyy-MM-dd z", @datetime.Reject,
-)                                                   // Err(UnsupportedField('z'))
+)
+// Err(UnsupportedField('z'))
 
 let rules = @plural.PluralRules::cached("ar")
-rules.select(3.0)                                    // few
+rules.select(3.0)                                     // few
 
 @relative.format_relative(-3.0, @relative.Day, locale) // vor 3 Tagen
-// `format_relative` also accepts `rules=...` to reuse a precompiled rule set.
 ```
 
-Explicit patterns preserve literal whitespace, including leading and trailing
-spaces. Unsupported fields are skipped by default; `format_pattern_with_policy`
-and `format_time_with_policy` expose `Skip`, `Preserve` and `Reject`.
+显式模式会保留字面空格，包括首尾空格。默认情况下，不支持的字段会被跳过；
+`format_pattern_with_policy` 和 `format_time_with_policy` 提供 `Skip`、
+`Preserve`、`Reject` 三种策略。
 
-Locale parsing is strict when requested, while `parse` remains best-effort:
+## Locale 解析与协商
+
+`try_parse` 执行严格校验，`parse` 保持尽力解析的兼容行为：
 
 ```moonbit
 @core.Locale::try_parse("de-abc")                       // None
@@ -91,27 +101,27 @@ let available = [
 @core.Locale::negotiate("zh-HK, en;q=0.8", available)   // Some(zh-Hant)
 ```
 
-The strict parser covers language, script, region, variants, extensions and
-private-use sections. Extlang and grandfathered tags are rejected rather than
-guessed. The built-in likely-subtag table covers the bundled locales and common
-languages.
+严格解析器覆盖语言、书写系统、地区、variants、extensions 和 private-use
+区段。Extlang 与 grandfathered 标签会被拒绝，而不是被猜测成其他区域。内置的
+likely-subtag 表覆盖项目内置区域及常见语言。
 
-With options:
+## 数字选项
 
 ```moonbit
 let money = @number.NumberOptions::with_fraction_digits(2, 2)
-@number.format_decimal(1.0, locale, options=money)    // 1,00
+@number.format_decimal(1.0, locale, options=money)     // 1,00
+
 let plain = @number.NumberOptions::default().without_grouping()
 @number.format_decimal(1234567.0, locale, options=plain)
 ```
 
-Currency display and accounting options:
+## 货币显示与会计格式
 
 ```moonbit
 let en = @core.Locale::parse("en")
 let code = @number.CurrencyOptions::with_display(@number.Code)
 @number.format_currency(1234.5, "USD", en, currency_options=code)
-// USD 1,234.50 (with CLDR currency spacing)
+// USD 1,234.50
 
 let accounting = @number.CurrencyOptions::default().with_accounting()
 @number.format_currency(-1234.5, "USD", en, currency_options=accounting)
@@ -121,72 +131,74 @@ let accounting = @number.CurrencyOptions::default().with_accounting()
 // USD 1,234.50
 ```
 
-Plural selection can use the exact digits that were rendered, so `1` and `1.00`
-select different categories:
+## 复数与已渲染位数
+
+复数选择可以直接使用最终渲染出来的数字位数。因此 `1` 与 `1.00` 在英语中会选择
+不同的复数类别：
 
 ```moonbit
 let en = @core.Locale::parse("en")
 let rendered = @number.format_decimal_result(1.0, en, options=money)
-rendered.text                                        // 1.00
+rendered.text                  // 1.00
+rendered.integer_digits        // 1
+rendered.fraction_digits       // 00
+
 let rules = @plural.PluralRules::cached("en")
 rules.select_with_digits(
   rendered.integer_digits,
   rendered.fraction_digits,
-)                                                    // other (v = 2)
+)                              // other（v = 2）
 ```
 
-## Packages
+## 包结构
 
-| Package | Responsibility |
+| 包 | 职责 |
 | --- | --- |
-| `core` | Strict locale parsing, likely subtags, negotiation, fallback chain |
-| `data` | Generated CLDR tables (numbers, dates, plurals, relative time) |
-| `decimal` | Shared decimal string expansion, rounding and parsing |
-| `pattern` | Shared CLDR tokenizer for quoted literals and pattern fields |
-| `number` | Decimal, currency, percent, scientific and compact rendering |
-| `plural` | CLDR plural rule tokenizer, parser and evaluator |
-| `datetime` | Civil date-time, weekday, CLDR date/time patterns |
-| `relative` | Relative time, composed from the number and plural packages |
+| `core` | 严格 Locale 解析、likely subtags、语言协商、回退链 |
+| `data` | 生成的 CLDR 数据表（数字、日期、复数、相对时间） |
+| `decimal` | 十进制字符串展开、舍入与解析 |
+| `pattern` | 数字与日期共用的 CLDR tokenizer，处理引号字面量与模式字段 |
+| `number` | 十进制、货币、百分比、科学计数法和紧凑记数 |
+| `plural` | CLDR 复数规则 tokenizer、parser 与 evaluator |
+| `datetime` | 公历日期时间、星期与 CLDR 日期时间模式 |
+| `relative` | 相对时间，组合 number 与 plural 两个包 |
+| `examples/readme` | 可执行 README 示例，输出由测试固定并在 CI 中运行 |
 
-## Demos
+## 示例与演示
 
-`cmd/main` prints a full cross-locale tour of the formatting APIs:
+`cmd/main` 会打印完整的跨区域格式化示例：
 
 ```bash
 moon run cmd/main
 ```
 
-`examples/readme` is an executable version of the README snippets. It compiles
-and runs the documented calls, and its companion test pins their expected
-output:
+`examples/readme` 是 README 代码片段的可执行版本。它会实际调用文档中的 API，
+并由配套测试固定输出：
 
 ```bash
 moon run examples/readme
 moon test examples/readme
 ```
 
-## Data pipeline
+## 数据管线
 
-Generated code is committed, so consumers do not need Node.js. To refresh it:
+生成代码已经提交到仓库，因此使用者不需要安装 Node.js。需要刷新数据时执行：
 
 ```bash
-node tools/fetch-cldr.mjs   # downloads the pinned CLDR JSON subset
-node tools/gen-cldr.mjs     # rewrites and formats data/generated.mbt
+node tools/fetch-cldr.mjs   # 下载锁定版本的 CLDR JSON 子集
+node tools/gen-cldr.mjs     # 重新生成并格式化 data/generated.mbt
 moon test
 ```
 
-Source: [unicode-org/cldr-json](https://github.com/unicode-org/cldr-json).
+数据来源：[unicode-org/cldr-json](https://github.com/unicode-org/cldr-json)。
 
-Generated currency data is deduplicated: one shared ISO code table and one
-English-based symbol table are emitted once, while each locale stores only its
-symbol and narrow-symbol overrides plus localized names in currency-code order.
-The compact tables use one default pattern per magnitude plus plural overrides,
-keeping `data/generated.mbt` at 37,021 bytes versus 40,088 before the data
-refactor (7.7% smaller) even after scientific and compact data were added. The
-generator runs `moon fmt` on the generated file so regeneration stays
-formatter-clean.
+生成器会对货币数据进行去重：共享的 ISO 代码表和基于英语的符号表只生成一次，
+每个区域只保存自己的符号、窄符号覆盖以及按货币代码排列的本地名称。紧凑记数表
+为每个数量级保存一个默认模式，并仅在需要时保存复数覆盖。加入科学计数法和紧凑
+记数数据后，`data/generated.mbt` 仍从 40,088 字节降至 37,021 字节，缩小 7.7%。
+生成器最后会执行 `moon fmt`，保证重新生成的文件符合格式要求。
 
-## Tests
+## 测试
 
 ```bash
 moon check
@@ -197,64 +209,57 @@ moon coverage analyze -- -f summary
 node tools/gen-intl-fixtures.mjs --check
 ```
 
-Test coverage currently includes strict locale parsing, likely subtags,
-Accept-Language negotiation, locale fallback, grouping and fraction rules,
-negative subpatterns, ISO 4217 digits, cardinal and ordinal plural selection,
-date/time styles across locales, quoted number and date patterns,
-relative time, scientific and compact notation, and shared currency table
-overrides.
+当前测试覆盖严格 Locale 解析、likely subtags、Accept-Language 协商、区域回退、
+分组与小数位规则、负数子模式、ISO 4217 小数位、基数与序数复数选择、多区域日期
+时间风格、数字与日期模式中的引号字面量、相对时间、科学计数法、紧凑记数以及共享
+货币表覆盖。
 
-## Continuous integration
+## 持续集成与发布
 
-`.github/workflows/ci.yml` runs the same test suite and the executable examples
-on `wasm-gc`, JavaScript and native backends. A separate quality job checks
-formatting, verifies the committed conformance fixtures and prints the
-`moon coverage` summary.
+`.github/workflows/ci.yml` 会在 `wasm-gc`、JavaScript 和 Native 三种后端运行
+完整测试与可执行示例。独立的质量任务负责检查格式、校验已提交的一致性测试数据，
+并输出 `moon coverage` 覆盖率摘要。
 
-`.github/workflows/publish.yml` publishes the module to MoonCakes when a `v*`
-tag is pushed. Configure the `MOONCAKES_USERNAME` and `MOONCAKES_TOKEN`
-repository secrets before creating the first release tag.
+`.github/workflows/publish.yml` 会在推送 `v*` 标签后将模块发布到 MoonCakes。
+首次发布前需要配置 `MOONCAKES_USERNAME` 与 `MOONCAKES_TOKEN` 两个仓库 Secrets。
 
-## Conformance
+## 一致性测试
 
-`conformance/intl_conformance_wbtest.mbt` contains 178 static white-box
-assertions generated from Node.js `Intl`, so CI only needs `moon test` and does
-not need Node.js at runtime. The suite covers six locales and the supported
-surface area: decimals and negative values, percent signs, currency
-symbol/code/name/narrow displays, accounting, medium dates, short times,
-relative day/hour output, scientific and compact notation, cardinal plurals and
-visible fraction digits.
+`conformance/intl_conformance_wbtest.mbt` 包含 178 条由 Node.js `Intl` 生成的
+静态白盒断言。因此 CI 运行时只需要 `moon test`，不需要 Node.js 参与格式化。
+测试覆盖 6 个区域，包括十进制与负数、百分号、货币符号/代码/名称/窄符号、
+accounting 模式、日期、时间、相对日/小时、科学计数法、紧凑记数、基数复数和
+可见小数位。
 
-Regenerate or verify the committed fixtures with:
+重新生成或校验一致性数据：
 
 ```bash
 node tools/gen-intl-fixtures.mjs
 node tools/gen-intl-fixtures.mjs --check
 ```
 
-The generator records the Node and ICU versions in the fixture header. Date and
-time comparisons treat U+202F (the CLDR narrow no-break space) and U+0020 (the
-space emitted by Node ICU in these patterns) as equivalent; all other spacing,
-including currency spacing, is compared exactly.
+生成器会在文件头记录 Node 与 ICU 版本。日期时间比较会把 U+202F（CLDR 窄不换行
+空格）和 U+0020（Node ICU 在这些模式中输出的普通空格）视为等价；其余空格，
+包括货币间距，均按精确内容比较。
 
-Known exclusions are timezone rendering, non-Gregorian calendars and non-`latn`
-numbering systems. Timezone fields can be detected with `Reject` instead of
-being silently discarded. These exclusions are tracked in the roadmap below.
+## 已知边界
 
-## Roadmap
+当前明确不包含时区渲染、非公历日历和非 `latn` 数字系统。时区字段可以通过
+`Reject` 策略被显式检测，而不是静默丢弃。这些能力列在后续路线图中。
 
-1. Unit formatting and compact long forms.
-2. Official CLDR conformance suites for numbers, dates and plurals.
-3. ICU4X differential testing alongside the current Node `Intl` suite.
-4. IANA timezone data and non-Gregorian calendars.
-5. Non-`latn` numbering systems (Arabic-Indic, Devanagari, ...).
-6. WASM playground and an npm-consumable bundle.
+## 路线图
 
-## Project proposal
+1. 单位格式化与紧凑记数长格式。
+2. 接入数字、日期和复数的 CLDR 官方一致性测试套件。
+3. 在现有 Node `Intl` 差分测试之外增加 ICU4X 差分测试。
+4. IANA 时区数据与非公历日历。
+5. 非 `latn` 数字系统（阿拉伯-印度数字、天城文数字等）。
+6. WASM Playground 与可通过 npm 分发的 bundle。
 
-The competition proposal and ecosystem survey live in
-[`docs/proposal.md`](docs/proposal.md).
+## 项目申报书
 
-## License
+竞赛申报书与生态调研位于 [`docs/proposal.md`](docs/proposal.md)。
 
-Apache-2.0.
+## 许可证
+
+Apache-2.0。
