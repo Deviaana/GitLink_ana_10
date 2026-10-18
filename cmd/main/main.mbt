@@ -44,6 +44,21 @@ fn main {
     println(tag + "  " + @number.format_percent(0.125, locale))
   }
   println("")
+  println("-- compact 1234567 --")
+  for tag in tags {
+    let locale = @core.Locale::parse(tag)
+    println(tag + "  " + @number.format_compact(1234567.0, locale))
+  }
+  println("")
+  println("-- scientific 1234567 --")
+  for tag in tags {
+    let locale = @core.Locale::parse(tag)
+    println(tag + "  " + @number.format_scientific(1234567.0, locale))
+  }
+  println("")
+  println("-- quoted number pattern --")
+  println(@number.format_with_pattern(12.5, en, "0.0 'kg'"))
+  println("")
   println("-- date medium, 2026-10-18 --")
   for tag in tags {
     let locale = @core.Locale::parse(tag)

@@ -1,7 +1,20 @@
 ///|
-/// A parsed CLDR number pattern.
-///
-/// Only the pieces needed for decimal, percent and currency rendering are kept.
+/// A parsed section of a CLDR number pattern.
+priv struct NumberSection {
+  prefix : String
+  suffix : String
+  min_integer : Int
+  min_fraction : Int
+  max_fraction : Int
+  group_primary : Int
+  group_secondary : Int
+  scientific : Bool
+  exponent_min_digits : Int
+  exponent_plus : Bool
+}
+
+///|
+/// A complete number pattern with an optional negative subpattern.
 priv struct NumberPattern {
   positive_prefix : String
   positive_suffix : String
@@ -13,115 +26,279 @@ priv struct NumberPattern {
   max_fraction : Int
   group_primary : Int
   group_secondary : Int
+  scientific : Bool
+  exponent_min_digits : Int
+  exponent_plus : Bool
 }
 
 ///|
-fn is_placeholder(c : Char) -> Bool {
-  c == '#' || c == '0'
+fn repeat_char(field : Char, count : Int) -> String {
+  let builder = StringBuilder::new()
+  let mut index = 0
+  while index < count {
+    builder.write_object(field)
+    index = index + 1
+  }
+  builder.to_string()
 }
 
 ///|
-fn count_char(text : String, target : Char) -> Int {
+fn token_text(token : @pattern.PatternToken) -> String {
+  match token {
+    @pattern.Literal(text) => text
+    @pattern.Field(field, count) => repeat_char(field, count)
+    @pattern.Placeholder(field, count) => repeat_char(field, count)
+    @pattern.Currency(count) => repeat_char('¤', count)
+    @pattern.Separator => ";"
+  }
+}
+
+///|
+fn tokens_text(
+  tokens : Array[@pattern.PatternToken],
+  start : Int,
+  end : Int,
+) -> String {
+  let builder = StringBuilder::new()
+  let mut index = start
+  while index < end {
+    builder.write_stringview(token_text(tokens[index]))
+    index = index + 1
+  }
+  builder.to_string()
+}
+
+///|
+fn is_dot(token : @pattern.PatternToken) -> Bool {
+  match token {
+    @pattern.Literal(text) => text == "."
+    _ => false
+  }
+}
+
+///|
+fn is_comma(token : @pattern.PatternToken) -> Bool {
+  match token {
+    @pattern.Literal(text) => text == ","
+    _ => false
+  }
+}
+
+///|
+fn count_placeholders(
+  tokens : Array[@pattern.PatternToken],
+  start : Int,
+  end : Int,
+  only_zeros : Bool,
+) -> Int {
   let mut count = 0
-  for c in text.iter() {
-    if c == target {
-      count = count + 1
+  let mut index = start
+  while index < end {
+    match tokens[index] {
+      @pattern.Placeholder(field, amount) =>
+        if !only_zeros || field == '0' {
+          count = count + amount
+        }
+      _ => ()
     }
+    index = index + 1
   }
   count
 }
 
 ///|
-/// Parse one section such as `#,##0.00` or `0%`.
-fn parse_section(section : String) -> (String, String, Int, Int, Int, Int, Int) {
+fn parse_integer_grouping(
+  tokens : Array[@pattern.PatternToken],
+  start : Int,
+  end : Int,
+) -> (Int, Int) {
+  let segments : Array[Int] = []
+  let mut segment_length = 0
+  let mut saw_comma = false
+  let mut index = start
+  while index < end {
+    match tokens[index] {
+      @pattern.Placeholder(_, amount) =>
+        segment_length = segment_length + amount
+      @pattern.Literal(_) =>
+        if is_comma(tokens[index]) {
+          segments.push(segment_length)
+          segment_length = 0
+          saw_comma = true
+        }
+      _ => ()
+    }
+    index = index + 1
+  }
+  segments.push(segment_length)
+  if !saw_comma || segments.length() < 2 {
+    return (0, 0)
+  }
+  let primary = segments[segments.length() - 1]
+  let secondary = if segments.length() > 2 {
+    segments[segments.length() - 2]
+  } else {
+    primary
+  }
+  (primary, if secondary == 0 { primary } else { secondary })
+}
+
+///|
+fn parse_section(tokens : Array[@pattern.PatternToken]) -> NumberSection {
   let mut start = -1
   let mut end = -1
-  for i, c in section.iter2() {
-    if is_placeholder(c) {
-      if start < 0 {
-        start = i
+  let mut exponent = -1
+  for index, token in tokens.iter2() {
+    match token {
+      @pattern.Placeholder(_, _) => {
+        if start < 0 {
+          start = index
+        }
+        end = index
       }
-      end = i
+      @pattern.Field(field, _) =>
+        if field == 'E' && exponent < 0 && start >= 0 {
+          exponent = index
+        }
+      _ => ()
     }
   }
   if start < 0 {
-    return ("", section, 1, 0, 0, 0, 0)
-  }
-  let prefix = section[0:start].to_owned()
-  let suffix = section[end + 1:section.length()].to_owned()
-  let numeric = section[start:end + 1].to_owned()
-  let dot = numeric.find(".")
-  let int_part = match dot {
-    Some(index) => numeric[0:index].to_owned()
-    None => numeric
-  }
-  let frac_part = match dot {
-    Some(index) => numeric[index + 1:numeric.length()].to_owned()
-    None => ""
-  }
-  let segments : Array[String] = []
-  for segment in int_part.split(",") {
-    segments.push(segment.to_owned())
-  }
-  let mut group_primary = 0
-  let mut group_secondary = 0
-  if segments.length() > 1 {
-    group_primary = segments[segments.length() - 1].length()
-    if segments.length() > 2 {
-      group_secondary = segments[segments.length() - 2].length()
-    } else {
-      group_secondary = group_primary
-    }
-    if group_secondary == 0 {
-      group_secondary = group_primary
+    return {
+      prefix: tokens_text(tokens, 0, tokens.length()),
+      suffix: "",
+      min_integer: 1,
+      min_fraction: 0,
+      max_fraction: 0,
+      group_primary: 0,
+      group_secondary: 0,
+      scientific: false,
+      exponent_min_digits: 1,
+      exponent_plus: false,
     }
   }
-  let mut min_integer = count_char(int_part, '0')
+  let scientific = exponent >= 0
+  let number_end = if scientific { exponent } else { end + 1 }
+  let decimal = {
+    let mut found = -1
+    let mut index = start
+    while index < number_end && found < 0 {
+      if is_dot(tokens[index]) {
+        found = index
+      }
+      index = index + 1
+    }
+    found
+  }
+  let integer_end = if decimal >= 0 { decimal } else { number_end }
+  let fraction_start = if decimal >= 0 { decimal + 1 } else { number_end }
+  let mut min_integer = count_placeholders(tokens, start, integer_end, true)
   if min_integer == 0 {
     min_integer = 1
   }
-  let min_fraction = count_char(frac_part, '0')
-  let max_fraction = count_char(frac_part, '0') + count_char(frac_part, '#')
-  (
-    prefix, suffix, min_integer, min_fraction, max_fraction, group_primary, group_secondary,
+  let min_fraction = count_placeholders(
+    tokens, fraction_start, number_end, true,
   )
+  let max_fraction = count_placeholders(
+    tokens, fraction_start, number_end, false,
+  )
+  let (group_primary, group_secondary) = parse_integer_grouping(
+    tokens, start, integer_end,
+  )
+  let exponent_start = if scientific { exponent + 1 } else { end + 1 }
+  let exponent_min_digits = if scientific {
+    let count = count_placeholders(tokens, exponent_start, end + 1, true)
+    if count == 0 {
+      1
+    } else {
+      count
+    }
+  } else {
+    1
+  }
+  let exponent_plus = if scientific {
+    let mut plus = false
+    let mut index = exponent_start
+    while index <= end {
+      match tokens[index] {
+        @pattern.Literal(text) => if text.contains("+") { plus = true }
+        @pattern.Placeholder(_, _) => index = end + 1
+        _ => ()
+      }
+      index = index + 1
+    }
+    plus
+  } else {
+    false
+  }
+  {
+    prefix: tokens_text(tokens, 0, start),
+    suffix: tokens_text(tokens, end + 1, tokens.length()),
+    min_integer,
+    min_fraction,
+    max_fraction,
+    group_primary,
+    group_secondary,
+    scientific,
+    exponent_min_digits,
+    exponent_plus,
+  }
+}
+
+///|
+fn split_sections(pattern : String) -> Array[Array[@pattern.PatternToken]] {
+  let sections : Array[Array[@pattern.PatternToken]] = []
+  let current : Array[@pattern.PatternToken] = []
+  for token in @pattern.tokenize_pattern(pattern) {
+    match token {
+      @pattern.Separator => {
+        sections.push(current.copy())
+        current.clear()
+      }
+      _ => current.push(token)
+    }
+  }
+  sections.push(current)
+  sections
 }
 
 ///|
 /// Parse a complete pattern, including an optional negative subpattern.
 fn parse_pattern(pattern : String) -> NumberPattern {
-  let sections : Array[String] = []
-  for section in pattern.split(";") {
-    sections.push(section.to_owned())
-  }
-  let positive = if sections.length() > 0 { sections[0] } else { "#,##0.###" }
-  let (pp, ps, min_int, min_frac, max_frac, gp, gs) = parse_section(positive)
+  let sections = split_sections(pattern)
+  let positive = parse_section(sections[0])
   if sections.length() > 1 {
-    let (np, ns, _, _, _, _, _) = parse_section(sections[1])
+    let negative = parse_section(sections[1])
     {
-      positive_prefix: pp,
-      positive_suffix: ps,
-      negative_prefix: np,
-      negative_suffix: ns,
+      positive_prefix: positive.prefix,
+      positive_suffix: positive.suffix,
+      negative_prefix: negative.prefix,
+      negative_suffix: negative.suffix,
       has_negative: true,
-      min_integer: min_int,
-      min_fraction: min_frac,
-      max_fraction: max_frac,
-      group_primary: gp,
-      group_secondary: gs,
+      min_integer: positive.min_integer,
+      min_fraction: positive.min_fraction,
+      max_fraction: positive.max_fraction,
+      group_primary: positive.group_primary,
+      group_secondary: positive.group_secondary,
+      scientific: positive.scientific,
+      exponent_min_digits: positive.exponent_min_digits,
+      exponent_plus: positive.exponent_plus,
     }
   } else {
     {
-      positive_prefix: pp,
-      positive_suffix: ps,
+      positive_prefix: positive.prefix,
+      positive_suffix: positive.suffix,
       negative_prefix: "",
       negative_suffix: "",
       has_negative: false,
-      min_integer: min_int,
-      min_fraction: min_frac,
-      max_fraction: max_frac,
-      group_primary: gp,
-      group_secondary: gs,
+      min_integer: positive.min_integer,
+      min_fraction: positive.min_fraction,
+      max_fraction: positive.max_fraction,
+      group_primary: positive.group_primary,
+      group_secondary: positive.group_secondary,
+      scientific: positive.scientific,
+      exponent_min_digits: positive.exponent_min_digits,
+      exponent_plus: positive.exponent_plus,
     }
   }
 }

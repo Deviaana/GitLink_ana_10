@@ -82,6 +82,22 @@ let en_numbers : NumberData = {
     ("UAE dirham", "UAE dirhams"),
     ("Saudi riyal", "Saudi riyals"),
   ],
+  scientific_pattern: "#E0",
+  compact_patterns: [
+    (3, "0K"),
+    (4, "00K"),
+    (5, "000K"),
+    (6, "0M"),
+    (7, "00M"),
+    (8, "000M"),
+    (9, "0B"),
+    (10, "00B"),
+    (11, "000B"),
+    (12, "0T"),
+    (13, "00T"),
+    (14, "000T"),
+  ],
+  compact_plural_patterns: [],
 }
 
 ///|
@@ -158,6 +174,22 @@ let zh_numbers : NumberData = {
     ("阿联酋迪拉姆", "阿联酋迪拉姆"),
     ("沙特里亚尔", "沙特里亚尔"),
   ],
+  scientific_pattern: "#E0",
+  compact_patterns: [
+    (3, "0"),
+    (4, "0万"),
+    (5, "00万"),
+    (6, "000万"),
+    (7, "0000万"),
+    (8, "0亿"),
+    (9, "00亿"),
+    (10, "000亿"),
+    (11, "0000亿"),
+    (12, "0万亿"),
+    (13, "00万亿"),
+    (14, "000万亿"),
+  ],
+  compact_plural_patterns: [],
 }
 
 ///|
@@ -230,6 +262,22 @@ let de_numbers : NumberData = {
     ("VAE-Dirham", "VAE-Dirham"),
     ("Saudi-Rial", "Saudi-Rial"),
   ],
+  scientific_pattern: "#E0",
+  compact_patterns: [
+    (3, "0"),
+    (4, "0"),
+    (5, "0"),
+    (6, "0 Mio'.'"),
+    (7, "00 Mio'.'"),
+    (8, "000 Mio'.'"),
+    (9, "0 Mrd'.'"),
+    (10, "00 Mrd'.'"),
+    (11, "000 Mrd'.'"),
+    (12, "0 Bio'.'"),
+    (13, "00 Bio'.'"),
+    (14, "000 Bio'.'"),
+  ],
+  compact_plural_patterns: [],
 }
 
 ///|
@@ -304,6 +352,27 @@ let ja_numbers : NumberData = {
     ("アラブ首長国連邦ディルハム", "UAE ディルハム"),
     ("サウジ リヤル", "サウジ リヤル"),
   ],
+  scientific_pattern: "#E0",
+  compact_patterns: [
+    (3, "0"),
+    (4, "0万"),
+    (5, "00万"),
+    (6, "000万"),
+    (7, "0000万"),
+    (8, "0億"),
+    (9, "00億"),
+    (10, "000億"),
+    (11, "0000億"),
+    (12, "0兆"),
+    (13, "00兆"),
+    (14, "000兆"),
+    (15, "0000兆"),
+    (16, "0京"),
+    (17, "00京"),
+    (18, "000京"),
+    (19, "0000京"),
+  ],
+  compact_plural_patterns: [],
 }
 
 ///|
@@ -374,6 +443,22 @@ let ar_numbers : NumberData = {
     ("درهم إماراتي", "درهم إماراتي"),
     ("ريال سعودي", "ريال سعودي"),
   ],
+  scientific_pattern: "#E0",
+  compact_patterns: [
+    (3, "0 ألف"),
+    (4, "00 ألف"),
+    (5, "000 ألف"),
+    (6, "0 مليون"),
+    (7, "00 مليون"),
+    (8, "000 مليون"),
+    (9, "0 مليار"),
+    (10, "00 مليار"),
+    (11, "000 مليار"),
+    (12, "0 ترليون"),
+    (13, "00 ترليون"),
+    (14, "000 ترليون"),
+  ],
+  compact_plural_patterns: [(3, "few", "0 آلاف")],
 }
 
 ///|
@@ -459,6 +544,22 @@ let fr_numbers : NumberData = {
     ("dirham des Émirats arabes unis", "dirhams des Émirats arabes unis"),
     ("riyal saoudien", "riyals saoudiens"),
   ],
+  scientific_pattern: "#E0",
+  compact_patterns: [
+    (3, "0 k"),
+    (4, "00 k"),
+    (5, "000 k"),
+    (6, "0 M"),
+    (7, "00 M"),
+    (8, "000 M"),
+    (9, "0 Md"),
+    (10, "00 Md"),
+    (11, "000 Md"),
+    (12, "0 Bn"),
+    (13, "00 Bn"),
+    (14, "000 Bn"),
+  ],
+  compact_plural_patterns: [],
 }
 
 ///|

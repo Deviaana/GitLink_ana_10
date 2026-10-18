@@ -58,6 +58,11 @@ function indexedTextArr(entries) {
   ).join(", ") + "]";
 }
 
+function compactArr(entries) {
+  return "[" + entries.map(([magnitude, category, pattern]) =>
+    "(" + magnitude + ", " + esc(category) + ", " + esc(pattern) + ")"
+  ).join(", ") + "]";
+}
 function textPairArr(pairs) {
   return "[" + pairs.map(([a, b]) =>
     "(" + esc(a) + ", " + esc(b) + ")"
@@ -95,6 +100,33 @@ function numberData(locale) {
   const decimal = numbers["decimalFormats-numberSystem-latn"]?.standard ?? "#,##0.###";
   const percent = numbers["percentFormats-numberSystem-latn"]?.standard ?? "#,##0%";
   const currency = numbers["currencyFormats-numberSystem-latn"] ?? {};
+  const scientificPattern =
+    numbers["scientificFormats-numberSystem-latn"]?.standard ?? "#E0";
+  const compactFormat =
+    numbers["decimalFormats-numberSystem-latn"]?.short?.decimalFormat ?? {};
+  const compactByMagnitude = new Map();
+  for (const [key, pattern] of Object.entries(compactFormat)) {
+    const match = key.match(/^(\d+)-count-(.+)$/);
+    if (!match) continue;
+    const magnitude = match[1].length - 1;
+    const category = match[2];
+    const categories = compactByMagnitude.get(magnitude) ?? {};
+    categories[category] = pattern;
+    compactByMagnitude.set(magnitude, categories);
+  }
+  const compactPatterns = [];
+  const compactPluralPatterns = [];
+  for (const magnitude of [...compactByMagnitude.keys()].sort((a, b) => a - b)) {
+    const categories = compactByMagnitude.get(magnitude);
+    const fallback =
+      categories.other ?? Object.values(categories)[0];
+    compactPatterns.push([magnitude, fallback]);
+    for (const [category, pattern] of Object.entries(categories)) {
+      if (category !== "other" && pattern !== fallback) {
+        compactPluralPatterns.push([magnitude, category, pattern]);
+      }
+    }
+  }
   let currencies = {};
   try {
     const cur = readJson(join(cache, locale, "currencies.json"));
@@ -143,6 +175,9 @@ function numberData(locale) {
     currency_symbols: symbolsList,
     currency_narrow_symbols: narrowSymbolsList,
     currency_names: namesList,
+    scientific_pattern: scientificPattern,
+    compact_patterns: compactPatterns,
+    compact_plural_patterns: compactPluralPatterns,
   };
 }
 
@@ -221,6 +256,9 @@ function emitNumber(locale, d) {
     `  currency_symbol_overrides: ${indexedTextArr(d.currency_symbol_overrides)},`,
     `  currency_narrow_symbol_overrides: ${indexedTextArr(d.currency_narrow_symbol_overrides)},`,
     `  currency_names: ${textPairArr(d.currency_names)},`,
+    `  scientific_pattern: ${esc(d.scientific_pattern)},`,
+    `  compact_patterns: ${indexedTextArr(d.compact_patterns)},`,
+    `  compact_plural_patterns: ${compactArr(d.compact_plural_patterns)},`,
     `}`,
     ``,
   ].join("\n");

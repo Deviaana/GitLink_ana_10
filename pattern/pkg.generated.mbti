@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/pattern"
+
+// Values
+pub fn tokenize_pattern(String) -> Array[PatternToken]
+
+// Errors
+
+// Types and methods
+pub(all) enum PatternToken {
+  Literal(String)
+  Field(Char, Int)
+  Placeholder(Char, Int)
+  Currency(Int)
+  Separator
+}
+
+// Type aliases
+
+// Traits
+

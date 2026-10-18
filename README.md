@@ -29,15 +29,15 @@ Early alpha, but the core pipeline is implemented and tested.
 | Area | Implemented | Notes |
 | --- | --- | --- |
 | Locale parsing | BCP 47 subset | strict parser, variants/extensions, likely subtags, Accept-Language negotiation |
-| Decimal | Yes | CLDR patterns, grouping, min/max fraction digits |
+| Decimal | Yes | CLDR patterns, grouping, fraction digits, scientific notation |
 | Currency | Yes | symbol/code/name/narrow display, accounting patterns, ISO 4217 digits |
 | Percent | Yes | CLDR percent pattern and localized percent sign |
 | Plural rules | Yes | cardinal + ordinal, parser for the CLDR rule grammar |
 | Date / time | Yes | CLDR styles, explicit patterns, date ranges, spacing-preserving output |
 | Relative time | Yes | future / past / zero, plural-aware |
-| Intl differential | Yes | 166 static fixtures across six locales |
+| Intl differential | Yes | 178 static fixtures across six locales |
 | Locales bundled | `en`, `zh`, `de`, `ja`, `fr`, `ar` | `latn` numbering system |
-| Compact notation | Not yet | `1.2万` / `1.2M` |
+| Compact notation | Yes | short CLDR patterns with plural-aware suffixes |
 | Time zones | Not yet | `z` fields use explicit skip/preserve/reject policies |
 | Non-Gregorian calendars | Not yet | |
 
@@ -49,6 +49,9 @@ let locale = @core.Locale::parse("de")
 @number.format_decimal(1234567.891, locale)          // 1.234.567,891
 @number.format_currency(1234.5, "EUR", locale)       // 1.234,50 €
 @number.format_percent(0.125, locale)                // 13 %
+@number.format_compact(1234567.0, locale)            // 1,2 Mio.
+@number.format_scientific(1234567.0, locale)         // 1,235E6
+@number.format_with_pattern(12.5, locale, "0.0 'kg'") // 12,5 kg
 
 let date = @datetime.DateTime::new(2026, 10, 18, hour=17, minute=42)
 @datetime.format_date(date, locale)                  // 18.10.2026
@@ -138,7 +141,8 @@ rules.select_with_digits(
 | `core` | Strict locale parsing, likely subtags, negotiation, fallback chain |
 | `data` | Generated CLDR tables (numbers, dates, plurals, relative time) |
 | `decimal` | Shared decimal string expansion, rounding and parsing |
-| `number` | Pattern parser and decimal / currency / percent rendering |
+| `pattern` | Shared CLDR tokenizer for quoted literals and pattern fields |
+| `number` | Decimal, currency, percent, scientific and compact rendering |
 | `plural` | CLDR plural rule tokenizer, parser and evaluator |
 | `datetime` | Civil date-time, weekday, CLDR date/time patterns |
 | `relative` | Relative time, composed from the number and plural packages |
@@ -164,7 +168,9 @@ Source: [unicode-org/cldr-json](https://github.com/unicode-org/cldr-json).
 Generated currency data is deduplicated: one shared ISO code table and one
 English-based symbol table are emitted once, while each locale stores only its
 symbol and narrow-symbol overrides plus localized names in currency-code order.
-This reduced `data/generated.mbt` from 40,088 to 34,923 bytes (12.9%). The
+The compact tables use one default pattern per magnitude plus plural overrides,
+keeping `data/generated.mbt` at 37,021 bytes versus 40,088 before the data
+refactor (7.7% smaller) even after scientific and compact data were added. The
 generator runs `moon fmt` on the generated file so regeneration stays
 formatter-clean.
 
@@ -178,17 +184,19 @@ moon check
 Coverage currently includes strict locale parsing, likely subtags,
 Accept-Language negotiation, locale fallback, grouping and fraction rules,
 negative subpatterns, ISO 4217 digits, cardinal and ordinal plural selection,
-date/time styles across locales, quoted pattern literals, relative time, and
-shared currency table overrides.
+date/time styles across locales, quoted number and date patterns,
+relative time, scientific and compact notation, and shared currency table
+overrides.
 
 ## Conformance
 
-`conformance/intl_conformance_wbtest.mbt` contains 166 static white-box
+`conformance/intl_conformance_wbtest.mbt` contains 178 static white-box
 assertions generated from Node.js `Intl`, so CI only needs `moon test` and does
 not need Node.js at runtime. The suite covers six locales and the supported
 surface area: decimals and negative values, percent signs, currency
 symbol/code/name/narrow displays, accounting, medium dates, short times,
-relative day/hour output, cardinal plurals and visible fraction digits.
+relative day/hour output, scientific and compact notation, cardinal plurals and
+visible fraction digits.
 
 Regenerate or verify the committed fixtures with:
 
@@ -202,14 +210,13 @@ time comparisons treat U+202F (the CLDR narrow no-break space) and U+0020 (the
 space emitted by Node ICU in these patterns) as equivalent; all other spacing,
 including currency spacing, is compared exactly.
 
-Known exclusions are timezone rendering, non-Gregorian calendars, compact
-notation and non-`latn` numbering systems. Timezone fields can be detected with
-`Reject` instead of being silently discarded. These exclusions are tracked in
-the roadmap below.
+Known exclusions are timezone rendering, non-Gregorian calendars and non-`latn`
+numbering systems. Timezone fields can be detected with `Reject` instead of
+being silently discarded. These exclusions are tracked in the roadmap below.
 
 ## Roadmap
 
-1. Compact notation and unit formatting.
+1. Unit formatting and compact long forms.
 2. Official CLDR conformance suites for numbers, dates and plurals.
 3. ICU4X differential testing alongside the current Node `Intl` suite.
 4. IANA timezone data and non-Gregorian calendars.

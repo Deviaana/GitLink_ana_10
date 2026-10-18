@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn format_compact(Double, @core.Locale, options? : NumberOptions) -> String
+
 pub fn format_currency(Double, String, @core.Locale, options? : NumberOptions, currency_options? : CurrencyOptions) -> String
 
 pub fn format_currency_with_pattern(Double, String, @core.Locale, String, options? : NumberOptions, currency_options? : CurrencyOptions) -> String
@@ -15,6 +17,8 @@ pub fn format_decimal(Double, @core.Locale, options? : NumberOptions) -> String
 pub fn format_decimal_result(Double, @core.Locale, options? : NumberOptions) -> NumberFormatResult
 
 pub fn format_percent(Double, @core.Locale, options? : NumberOptions) -> String
+
+pub fn format_scientific(Double, @core.Locale, options? : NumberOptions) -> String
 
 pub fn format_with_pattern(Double, @core.Locale, String, options? : NumberOptions) -> String
 

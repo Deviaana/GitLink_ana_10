@@ -51,6 +51,9 @@ pub(all) struct NumberData {
   currency_symbol_overrides : Array[(Int, String)]
   currency_narrow_symbol_overrides : Array[(Int, String)]
   currency_names : Array[(String, String)]
+  scientific_pattern : String
+  compact_patterns : Array[(Int, String)]
+  compact_plural_patterns : Array[(Int, String, String)]
 }
 pub fn NumberData::currency_name(Self, String, String) -> String
 pub fn NumberData::currency_narrow_symbol(Self, String) -> String

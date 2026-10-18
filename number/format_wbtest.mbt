@@ -192,3 +192,58 @@ test "currency names support non-latin locales" {
     "1,234.50米ドル",
   )
 }
+
+///|
+test "quoted pattern literals and currency markers" {
+  let en = @core.Locale::parse("en")
+  assert_eq(format_with_pattern(12.5, en, "0.0 'kg'"), "12.5 kg")
+  assert_eq(format_with_pattern(-12.5, en, "0.0 ';'"), "-12.5 ;")
+  assert_eq(
+    format_currency_with_pattern(1234.5, "USD", en, "¤¤ 'total' #,##0.00"),
+    "USD total 1,234.50",
+  )
+  assert_eq(
+    format_currency_with_pattern(1234.5, "USD", en, "#,##0.00 'in' ¤¤"),
+    "1,234.50 in USD",
+  )
+}
+
+///|
+test "scientific patterns render mantissa and exponent" {
+  let en = @core.Locale::parse("en")
+  assert_eq(format_scientific(1234567.0, en), "1.235E6")
+  assert_eq(format_with_pattern(1234567.0, en, "0.###E0"), "1.235E6")
+  assert_eq(format_with_pattern(0.00123, en, "0.###E0"), "1.23E-3")
+  assert_eq(format_with_pattern(-0.5, en, "0.###E0"), "-5E-1")
+  assert_eq(format_with_pattern(9.99, en, "0.0E0"), "1.0E1")
+  assert_eq(format_with_pattern(1234567.0, en, "0.###E+0"), "1.235E+6")
+  assert_eq(format_with_pattern(1234.0, en, "0.0E0 'm'"), "1.2E3 m")
+}
+
+///|
+test "compact notation follows locale suffixes and rounding" {
+  let en = @core.Locale::parse("en")
+  let zh = @core.Locale::parse("zh")
+  let de = @core.Locale::parse("de")
+  let fr = @core.Locale::parse("fr")
+  assert_eq(format_compact(1234.0, en), "1.2K")
+  assert_eq(format_compact(12345.0, en), "12K")
+  assert_eq(format_compact(1234567.0, en), "1.2M")
+  assert_eq(format_compact(-1234.0, en), "-1.2K")
+  assert_eq(format_compact(1234.0, zh), "1234")
+  assert_eq(format_compact(12345.0, zh), "1.2万")
+  assert_eq(format_compact(12345678.0, zh), "1235万")
+  assert_eq(format_compact(1234.0, de), "1234")
+  assert_eq(format_compact(12345.0, de), "12.345")
+  assert_eq(format_compact(1234567.0, de), "1,2\u{00A0}Mio.")
+  assert_eq(format_compact(1500000.0, fr), "1,5\u{00A0}M")
+}
+
+///|
+test "compact notation selects plural patterns" {
+  let ar = @core.Locale::parse("ar")
+  assert_eq(
+    format_compact(3000.0, ar),
+    "3\u{00A0}\u{0622}\u{0644}\u{0627}\u{0641}",
+  )
+}

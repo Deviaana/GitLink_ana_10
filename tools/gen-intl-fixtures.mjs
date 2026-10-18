@@ -56,6 +56,17 @@ for (const locale of locales) {
     `  assert_eq(@number.format_percent(0.125, locale), ${mbtString(new Intl.NumberFormat(locale, { style: "percent" }).format(0.125))})`,
   ].join("\n"));
 
+  const compact = new Intl.NumberFormat(locale, { notation: "compact" });
+  addTest(`intl compact ${locale}`, [
+    `  let locale = @core.Locale::parse(${mbtString(locale)})`,
+    `  assert_eq(@number.format_compact(12345.0, locale), ${mbtString(compact.format(12345))})`,
+  ].join("\n"));
+
+  const scientific = new Intl.NumberFormat(locale, { notation: "scientific" });
+  addTest(`intl scientific ${locale}`, [
+    `  let locale = @core.Locale::parse(${mbtString(locale)})`,
+    `  assert_eq(@number.format_scientific(1234567.0, locale), ${mbtString(scientific.format(1234567))})`,
+  ].join("\n"));
   const symbol = new Intl.NumberFormat(locale, { style: "currency", currency: "USD" });
   addTest(`intl currency symbol ${locale}`, [
     `  let locale = @core.Locale::parse(${mbtString(locale)})`,

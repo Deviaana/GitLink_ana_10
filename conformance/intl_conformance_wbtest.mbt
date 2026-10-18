@@ -52,6 +52,18 @@ test "intl percent en" {
 }
 
 ///|
+test "intl compact en" {
+  let locale = @core.Locale::parse("en")
+  assert_eq(@number.format_compact(12345.0, locale), "12K")
+}
+
+///|
+test "intl scientific en" {
+  let locale = @core.Locale::parse("en")
+  assert_eq(@number.format_scientific(1234567.0, locale), "1.235E6")
+}
+
+///|
 test "intl currency symbol en" {
   let locale = @core.Locale::parse("en")
   assert_eq(@number.format_currency(1234.5, "USD", locale), "$1,234.50")
@@ -255,6 +267,18 @@ test "intl percent zh" {
 }
 
 ///|
+test "intl compact zh" {
+  let locale = @core.Locale::parse("zh")
+  assert_eq(@number.format_compact(12345.0, locale), "1.2\u{4E07}")
+}
+
+///|
+test "intl scientific zh" {
+  let locale = @core.Locale::parse("zh")
+  assert_eq(@number.format_scientific(1234567.0, locale), "1.235E6")
+}
+
+///|
 test "intl currency symbol zh" {
   let locale = @core.Locale::parse("zh")
   assert_eq(@number.format_currency(1234.5, "USD", locale), "US$1,234.50")
@@ -454,6 +478,18 @@ test "intl decimal de 0.0000001" {
 test "intl percent de" {
   let locale = @core.Locale::parse("de")
   assert_eq(@number.format_percent(0.125, locale), "13\u{A0}%")
+}
+
+///|
+test "intl compact de" {
+  let locale = @core.Locale::parse("de")
+  assert_eq(@number.format_compact(12345.0, locale), "12.345")
+}
+
+///|
+test "intl scientific de" {
+  let locale = @core.Locale::parse("de")
+  assert_eq(@number.format_scientific(1234567.0, locale), "1,235E6")
 }
 
 ///|
@@ -660,6 +696,18 @@ test "intl percent ja" {
 }
 
 ///|
+test "intl compact ja" {
+  let locale = @core.Locale::parse("ja")
+  assert_eq(@number.format_compact(12345.0, locale), "1.2\u{4E07}")
+}
+
+///|
+test "intl scientific ja" {
+  let locale = @core.Locale::parse("ja")
+  assert_eq(@number.format_scientific(1234567.0, locale), "1.235E6")
+}
+
+///|
 test "intl currency symbol ja" {
   let locale = @core.Locale::parse("ja")
   assert_eq(@number.format_currency(1234.5, "USD", locale), "$1,234.50")
@@ -862,6 +910,18 @@ test "intl decimal fr 0.0000001" {
 test "intl percent fr" {
   let locale = @core.Locale::parse("fr")
   assert_eq(@number.format_percent(0.125, locale), "13\u{A0}%")
+}
+
+///|
+test "intl compact fr" {
+  let locale = @core.Locale::parse("fr")
+  assert_eq(@number.format_compact(12345.0, locale), "12\u{A0}k")
+}
+
+///|
+test "intl scientific fr" {
+  let locale = @core.Locale::parse("fr")
+  assert_eq(@number.format_scientific(1234567.0, locale), "1,235E6")
 }
 
 ///|
@@ -1071,6 +1131,21 @@ test "intl decimal ar 0.0000001" {
 test "intl percent ar" {
   let locale = @core.Locale::parse("ar")
   assert_eq(@number.format_percent(0.125, locale), "13\u{200E}%\u{200E}")
+}
+
+///|
+test "intl compact ar" {
+  let locale = @core.Locale::parse("ar")
+  assert_eq(
+    @number.format_compact(12345.0, locale),
+    "12\u{A0}\u{623}\u{644}\u{641}",
+  )
+}
+
+///|
+test "intl scientific ar" {
+  let locale = @core.Locale::parse("ar")
+  assert_eq(@number.format_scientific(1234567.0, locale), "1.235E6")
 }
 
 ///|

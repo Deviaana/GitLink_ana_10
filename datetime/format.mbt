@@ -113,6 +113,15 @@ fn is_supported_field(field : Char) -> Bool {
 }
 
 ///|
+fn write_repeated(builder : StringBuilder, field : Char, count : Int) -> Unit {
+  let mut index = 0
+  while index < count {
+    builder.write_object(field)
+    index = index + 1
+  }
+}
+
+///|
 fn format_pattern_core(
   date : DateTime,
   locale : @core.Locale,
@@ -120,55 +129,25 @@ fn format_pattern_core(
   unsupported : UnsupportedFieldPolicy,
 ) -> Result[String, DateFormatError] {
   let data = resolve_date_data(locale)
-  let chars = pattern.to_array()
   let builder = StringBuilder::new()
-  let length = chars.length()
-  let mut index = 0
-  while index < length {
-    let c = chars[index]
-    if c.to_int() == 39 {
-      index = index + 1
-      let mut closed = false
-      while index < length && !closed {
-        if chars[index].to_int() == 39 {
-          if index + 1 < length && chars[index + 1].to_int() == 39 {
-            builder.write_stringview("'")
-            index = index + 2
-          } else {
-            index = index + 1
-            closed = true
-          }
+  for token in @pattern.tokenize_pattern(pattern) {
+    match token {
+      @pattern.Literal(text) => builder.write_stringview(text)
+      @pattern.Field(field, count) =>
+        if is_supported_field(field) {
+          append_field(builder, field, count, date, data)
         } else {
-          builder.write_object(chars[index])
-          index = index + 1
-        }
-      }
-      continue
-    }
-    if c.is_ascii_alphabetic() {
-      let start = index
-      while index < length && chars[index] == c {
-        index = index + 1
-      }
-      if is_supported_field(c) {
-        append_field(builder, c, index - start, date, data)
-      } else {
-        match unsupported {
-          Skip => ()
-          Preserve => {
-            let mut position = start
-            while position < index {
-              builder.write_object(c)
-              position = position + 1
-            }
+          match unsupported {
+            Skip => ()
+            Preserve => write_repeated(builder, field, count)
+            Reject => return Err(UnsupportedField(field))
           }
-          Reject => return Err(UnsupportedField(c))
         }
-      }
-      continue
+      @pattern.Placeholder(field, count) =>
+        write_repeated(builder, field, count)
+      @pattern.Currency(count) => write_repeated(builder, '¤', count)
+      @pattern.Separator => builder.write_stringview(";")
     }
-    builder.write_object(c)
-    index = index + 1
   }
   Ok(builder.to_string())
 }
