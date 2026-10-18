@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/decimal"
+
+// Values
+pub fn expand_decimal(String) -> (String, String)
+
+pub fn parse_decimal_text(String) -> Double
+
+pub fn round_to_fraction(String, Int) -> (String, String)
+
+pub fn split_decimal(String) -> (String, String)
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

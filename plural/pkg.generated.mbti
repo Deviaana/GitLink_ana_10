@@ -32,6 +32,7 @@ pub struct PluralRules {
 pub fn PluralRules::cached(String, ordinal? : Bool) -> Self
 pub fn PluralRules::new(String, ordinal? : Bool) -> Self
 pub fn PluralRules::select(Self, Double, visible_fraction_digits? : Int) -> String
+pub fn PluralRules::select_with_digits(Self, String, String) -> String
 
 pub struct Range {
   low : Double

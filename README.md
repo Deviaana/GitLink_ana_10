@@ -70,12 +70,27 @@ let plain = @number.NumberOptions::default().without_grouping()
 @number.format_decimal(1234567.0, locale, options=plain)
 ```
 
+Plural selection can use the exact digits that were rendered, so `1` and `1.00`
+select different categories:
+
+```moonbit
+let en = @core.Locale::parse("en")
+let rendered = @number.format_decimal_result(1.0, en, options=money)
+rendered.text                                        // 1.00
+let rules = @plural.PluralRules::cached("en")
+rules.select_with_digits(
+  rendered.integer_digits,
+  rendered.fraction_digits,
+)                                                    // other (v = 2)
+```
+
 ## Packages
 
 | Package | Responsibility |
 | --- | --- |
 | `core` | Locale parsing, canonical tags, fallback chain |
 | `data` | Generated CLDR tables (numbers, dates, plurals, relative time) |
+| `decimal` | Shared decimal string expansion, rounding and parsing |
 | `number` | Pattern parser and decimal / currency / percent rendering |
 | `plural` | CLDR plural rule tokenizer, parser and evaluator |
 | `datetime` | Civil date-time, weekday, CLDR date/time patterns |

@@ -39,3 +39,10 @@ test "relative time accepts injected plural rules" {
   assert_eq(format_relative(3.0, Day, en, rules~), "in 3 days")
   assert_eq(format_relative(1.0, Day, en, rules~), "tomorrow")
 }
+
+///|
+test "relative time uses the rendered number for plural selection" {
+  let en = @core.Locale::parse("en")
+  assert_eq(format_relative(1.0001, Hour, en), "in 1 hour")
+  assert_eq(format_relative(-1.0001, Hour, en), "1 hour ago")
+}

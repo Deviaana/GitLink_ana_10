@@ -77,46 +77,82 @@ fn eval_condition(condition : Condition, ops : Operands) -> Bool {
 }
 
 ///|
-fn operands_of(value : Double, visible : Int?) -> Operands {
-  let n = value.abs()
-  let i = n.floor()
-  let raw = n.to_string()
-  let pieces : Array[String] = []
-  for piece in raw.split(".") {
-    pieces.push(piece.to_owned())
+/// Build operands from the exact unsigned digits that were rendered.
+fn operands_from_digits(
+  integer_digits : String,
+  fraction_digits : String,
+) -> Operands {
+  let int_text = if integer_digits.length() == 0 { "0" } else { integer_digits }
+  let i = @decimal.parse_decimal_text(int_text)
+  let n = if fraction_digits.length() == 0 {
+    i
+  } else {
+    @decimal.parse_decimal_text(int_text + "." + fraction_digits)
   }
-  let fraction = if pieces.length() > 1 { pieces[1] } else { "" }
-  let digits = visible.unwrap_or(fraction.length())
-  let mut shown = fraction
-  if shown.length() > digits {
-    shown = shown[0:digits].to_owned()
+  let v = fraction_digits.length()
+  let f = if v == 0 {
+    0.0
+  } else {
+    @decimal.parse_decimal_text(fraction_digits)
   }
-  if shown.length() < digits {
-    shown = shown.pad_end(digits, '0')
-  }
-  let v = digits
-  let f = if shown.length() > 0 { parse_decimal_text(shown) } else { 0.0 }
-  let mut trimmed = shown
+  let mut trimmed = fraction_digits
   while trimmed.length() > 0 && trimmed.has_suffix("0") {
     trimmed = trimmed[0:trimmed.length() - 1].to_owned()
   }
   let w = trimmed.length()
-  let t = if trimmed.length() > 0 { parse_decimal_text(trimmed) } else { 0.0 }
+  let t = if w == 0 { 0.0 } else { @decimal.parse_decimal_text(trimmed) }
   { n, i, v: v.to_double(), w: w.to_double(), f, t, c: 0.0, e: 0.0 }
 }
 
 ///|
-/// Select the CLDR plural category for a numeric value.
-pub fn PluralRules::select(
-  self : PluralRules,
-  value : Double,
-  visible_fraction_digits? : Int,
-) -> String {
-  let ops = operands_of(value, visible_fraction_digits)
-  for entry in self.rules {
+fn operands_of(value : Double, visible : Int?) -> Operands {
+  let n = value.abs()
+  let raw = n.to_string()
+  let expanded = @decimal.expand_decimal(raw)
+  let digits = match visible {
+    Some(count) => if count < 0 { 0 } else { count }
+    None => expanded.1.length()
+  }
+  let rounded = @decimal.round_to_fraction(raw, digits)
+  let mut shown = rounded.1
+  if shown.length() < digits {
+    shown = shown.pad_end(digits, '0')
+  }
+  operands_from_digits(rounded.0, shown)
+}
+
+///|
+fn select_operands(rules : PluralRules, ops : Operands) -> String {
+  for entry in rules.rules {
     if eval_condition(entry.1, ops) {
       return entry.0
     }
   }
   "other"
+}
+
+///|
+/// Select the CLDR plural category for a numeric value.
+///
+/// When `visible_fraction_digits` is supplied, the value is rounded to that
+/// many digits before `n`, `i`, `v`, `w`, `f` and `t` are derived.
+pub fn PluralRules::select(
+  self : PluralRules,
+  value : Double,
+  visible_fraction_digits? : Int,
+) -> String {
+  select_operands(self, operands_of(value, visible_fraction_digits))
+}
+
+///|
+/// Select using the exact unsigned digits produced by a number formatter.
+///
+/// `fraction_digits` includes trailing zeros, so `("1", "00")` means the
+/// rendered value is `1.00` and produces `v = 2`, `f = 0`, `w = 0`, `t = 0`.
+pub fn PluralRules::select_with_digits(
+  self : PluralRules,
+  integer_digits : String,
+  fraction_digits : String,
+) -> String {
+  select_operands(self, operands_from_digits(integer_digits, fraction_digits))
 }

@@ -66,3 +66,57 @@ test "cached rules fall back for unknown languages" {
   let rules = PluralRules::cached("xx")
   assert_eq(rules.select(1.0), "one")
 }
+
+///|
+test "formatted digits drive v w f and t" {
+  let rules : PluralRules = {
+    ordinal: false,
+    rules: compile_rules([
+      ("one", "v = 2 and w = 2 and f = 1 and t = 1"),
+      ("other", ""),
+    ]),
+  }
+  assert_eq(rules.select_with_digits("1", "01"), "one")
+  assert_eq(rules.select_with_digits("1", "00"), "other")
+  assert_eq(rules.select_with_digits("1", ""), "other")
+}
+
+///|
+test "one and one point zero zero select differently" {
+  let rules = PluralRules::new("en")
+  assert_eq(rules.select_with_digits("1", ""), "one")
+  assert_eq(rules.select_with_digits("1", "00"), "other")
+}
+
+///|
+test "visible fraction digits use formatter rounding" {
+  let rounded : PluralRules = {
+    ordinal: false,
+    rules: compile_rules([
+      ("one", "v = 2 and w = 2 and f = 1 and t = 1"),
+      ("other", ""),
+    ]),
+  }
+  assert_eq(rounded.select(1.005, visible_fraction_digits=2), "one")
+  assert_eq(rounded.select(1.0049, visible_fraction_digits=2), "other")
+  let tiny : PluralRules = {
+    ordinal: false,
+    rules: compile_rules([
+      ("one", "v = 7 and w = 7 and f = 1 and t = 1"),
+      ("other", ""),
+    ]),
+  }
+  assert_eq(tiny.select(1.0e-7, visible_fraction_digits=7), "one")
+}
+
+///|
+test "leading fraction zeros are preserved" {
+  let rules : PluralRules = {
+    ordinal: false,
+    rules: compile_rules([
+      ("one", "v = 2 and w = 1 and f = 50 and t = 5"),
+      ("other", ""),
+    ]),
+  }
+  assert_eq(rules.select(1.5, visible_fraction_digits=2), "one")
+}

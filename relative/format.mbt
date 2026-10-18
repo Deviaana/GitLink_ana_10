@@ -103,7 +103,11 @@ pub fn format_relative(
     Some(custom) => custom
     None => @plural.PluralRules::cached(locale.language)
   }
-  let category = plural_rules.select(magnitude)
+  let formatted = @number.format_decimal_result(magnitude, locale)
+  let category = plural_rules.select_with_digits(
+    formatted.integer_digits,
+    formatted.fraction_digits,
+  )
   let table = if value > 0.0 {
     unit_patterns.future
   } else {
@@ -113,6 +117,5 @@ pub fn format_relative(
   if pattern.length() == 0 {
     pattern = "{0}"
   }
-  let number = @number.format_decimal(magnitude, locale)
-  pattern.replace_all(old="{0}", new=number)
+  pattern.replace_all(old="{0}", new=formatted.text)
 }

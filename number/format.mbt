@@ -1,4 +1,13 @@
 ///|
+/// Result of formatting a number, including the exact digits used for type
+/// selection. `integer_digits` and `fraction_digits` are ungrouped and unsigned.
+pub(all) struct NumberFormatResult {
+  text : String
+  integer_digits : String
+  fraction_digits : String
+}
+
+///|
 fn fallback_number_data() -> @data.NumberData {
   match @data.number_data("en") {
     Some(data) => data
@@ -65,23 +74,24 @@ fn group_digits(
 }
 
 ///|
-fn format_core(
+fn format_core_result(
   value : Double,
   locale : @core.Locale,
   pattern : String,
   options : NumberOptions,
   currency_symbol : String?,
-) -> String {
+) -> NumberFormatResult {
   let data = resolve_number_data(locale)
   if value.is_nan() {
-    return data.nan
+    return { text: data.nan, integer_digits: "", fraction_digits: "" }
   }
   if value.is_inf() {
-    return if value < 0.0 {
+    let text = if value < 0.0 {
       data.minus_sign + data.infinity
     } else {
       data.infinity
     }
+    return { text, integer_digits: "", fraction_digits: "" }
   }
   let negative = value < 0.0
   let absolute = if negative { -value } else { value }
@@ -102,7 +112,10 @@ fn format_core(
   } else {
     min_fraction
   }
-  let rounded = round_to_fraction(absolute.to_string(), max_fraction_clamped)
+  let rounded = @decimal.round_to_fraction(
+    absolute.to_string(),
+    max_fraction_clamped,
+  )
   let mut int_digits = rounded.0
   let mut frac_digits = rounded.1
   while frac_digits.length() > min_fraction_clamped &&
@@ -142,11 +155,40 @@ fn format_core(
     }
     None => ()
   }
-  let mut result = prefix + grouped
+  let mut text = prefix + grouped
   if frac_digits.length() > 0 {
-    result = result + data.decimal + frac_digits
+    text = text + data.decimal + frac_digits
   }
-  result + suffix
+  text = text + suffix
+  { text, integer_digits: int_digits, fraction_digits: frac_digits }
+}
+
+///|
+fn format_core(
+  value : Double,
+  locale : @core.Locale,
+  pattern : String,
+  options : NumberOptions,
+  currency_symbol : String?,
+) -> String {
+  format_core_result(value, locale, pattern, options, currency_symbol).text
+}
+
+///|
+/// Format a decimal and return both the text and the digits used to render it.
+pub fn format_decimal_result(
+  value : Double,
+  locale : @core.Locale,
+  options? : NumberOptions,
+) -> NumberFormatResult {
+  let data = resolve_number_data(locale)
+  format_core_result(
+    value,
+    locale,
+    data.decimal_pattern,
+    options.unwrap_or(NumberOptions::default()),
+    None,
+  )
 }
 
 ///|
@@ -156,14 +198,7 @@ pub fn format_decimal(
   locale : @core.Locale,
   options? : NumberOptions,
 ) -> String {
-  let data = resolve_number_data(locale)
-  format_core(
-    value,
-    locale,
-    data.decimal_pattern,
-    options.unwrap_or(NumberOptions::default()),
-    None,
-  )
+  format_decimal_result(value, locale, options?).text
 }
 
 ///|

@@ -101,3 +101,21 @@ test "scientific notation input expands" {
   assert_eq(format_decimal(1.0e-7, en, options=wide), "0.0000001")
   assert_eq(format_decimal(1.0e21, en), "1,000,000,000,000,000,000,000")
 }
+
+///|
+test "decimal result exposes rendered digits" {
+  let en = @core.Locale::parse("en")
+  let money = NumberOptions::with_fraction_digits(2, 2)
+  let one = format_decimal_result(1.005, en, options=money)
+  assert_eq(one.text, "1.01")
+  assert_eq(one.integer_digits, "1")
+  assert_eq(one.fraction_digits, "01")
+  let carried = format_decimal_result(999.995, en, options=money)
+  assert_eq(carried.text, "1,000.00")
+  assert_eq(carried.integer_digits, "1000")
+  assert_eq(carried.fraction_digits, "00")
+  let padded = format_decimal_result(1.0, en, options=money)
+  assert_eq(padded.text, "1.00")
+  assert_eq(padded.integer_digits, "1")
+  assert_eq(padded.fraction_digits, "00")
+}

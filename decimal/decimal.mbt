@@ -1,6 +1,6 @@
 ///|
 /// Split `123.45` into `("123", "45")`.
-fn split_decimal(text : String) -> (String, String) {
+pub fn split_decimal(text : String) -> (String, String) {
   match text.find(".") {
     Some(index) => {
       let int_part = text[0:index].to_owned()
@@ -39,7 +39,7 @@ fn zero_string(count : Int) -> String {
 
 ///|
 /// Expand scientific notation into a plain integer/fraction pair.
-fn expand_decimal(raw : String) -> (String, String) {
+pub fn expand_decimal(raw : String) -> (String, String) {
   let lower = raw.to_lower()
   match lower.find("e") {
     None => split_decimal(raw)
@@ -96,7 +96,7 @@ fn increment_decimal(int_part : String, frac_part : String) -> (String, String) 
 ///|
 /// Round a non-negative decimal string to `max_fraction` digits using
 /// round-half-away-from-zero, matching the default `Intl` behavior.
-fn round_to_fraction(raw : String, max_fraction : Int) -> (String, String) {
+pub fn round_to_fraction(raw : String, max_fraction : Int) -> (String, String) {
   let parts = expand_decimal(raw)
   let int_part = parts.0
   let frac_part = parts.1
@@ -110,4 +110,26 @@ fn round_to_fraction(raw : String, max_fraction : Int) -> (String, String) {
   } else {
     (int_part, kept)
   }
+}
+
+///|
+/// Parse an unsigned decimal string such as `123.45`.
+pub fn parse_decimal_text(text : String) -> Double {
+  let mut value = 0.0
+  let mut scale = 0.1
+  let mut after_dot = false
+  for c in text.iter() {
+    if c == '.' {
+      after_dot = true
+    } else {
+      let digit = (c.to_int() - 48).to_double()
+      if after_dot {
+        value = value + digit * scale
+        scale = scale / 10.0
+      } else {
+        value = value * 10.0 + digit
+      }
+    }
+  }
+  value
 }

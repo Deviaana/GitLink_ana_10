@@ -1,3 +1,4 @@
 import {
   "moonl10n/moonl10n/data",
+  "moonl10n/moonl10n/decimal",
 }

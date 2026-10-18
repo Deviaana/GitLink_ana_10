@@ -10,6 +10,8 @@ pub fn format_currency(Double, String, @core.Locale, options? : NumberOptions) -
 
 pub fn format_decimal(Double, @core.Locale, options? : NumberOptions) -> String
 
+pub fn format_decimal_result(Double, @core.Locale, options? : NumberOptions) -> NumberFormatResult
+
 pub fn format_percent(Double, @core.Locale, options? : NumberOptions) -> String
 
 pub fn format_with_pattern(Double, @core.Locale, String, options? : NumberOptions) -> String
@@ -17,6 +19,12 @@ pub fn format_with_pattern(Double, @core.Locale, String, options? : NumberOption
 // Errors
 
 // Types and methods
+pub(all) struct NumberFormatResult {
+  text : String
+  integer_digits : String
+  fraction_digits : String
+}
+
 pub(all) struct NumberOptions {
   min_fraction : Int?
   max_fraction : Int?
