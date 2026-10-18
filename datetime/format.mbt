@@ -18,6 +18,7 @@ fn fallback_date_data() -> @data.DateData {
         days_abbr: [],
         am: "AM",
         pm: "PM",
+        interval_fallback: "{0} \u{2013} {1}",
       }
   }
 }
@@ -99,14 +100,25 @@ fn append_field(
 }
 
 ///|
-/// Render a civil date-time with an explicit CLDR pattern.
-///
-/// Unsupported fields (notably timezone fields such as `z`) are skipped.
-pub fn format_pattern(
+fn is_supported_field(field : Char) -> Bool {
+  field == 'y' ||
+  field == 'M' ||
+  field == 'd' ||
+  field == 'H' ||
+  field == 'h' ||
+  field == 'm' ||
+  field == 's' ||
+  field == 'a' ||
+  field == 'E'
+}
+
+///|
+fn format_pattern_core(
   date : DateTime,
   locale : @core.Locale,
   pattern : String,
-) -> String {
+  unsupported : UnsupportedFieldPolicy,
+) -> Result[String, DateFormatError] {
   let data = resolve_date_data(locale)
   let chars = pattern.to_array()
   let builder = StringBuilder::new()
@@ -138,13 +150,78 @@ pub fn format_pattern(
       while index < length && chars[index] == c {
         index = index + 1
       }
-      append_field(builder, c, index - start, date, data)
+      if is_supported_field(c) {
+        append_field(builder, c, index - start, date, data)
+      } else {
+        match unsupported {
+          Skip => ()
+          Preserve => {
+            let mut position = start
+            while position < index {
+              builder.write_object(c)
+              position = position + 1
+            }
+          }
+          Reject => return Err(UnsupportedField(c))
+        }
+      }
       continue
     }
     builder.write_object(c)
     index = index + 1
   }
-  builder.to_string().trim().to_owned()
+  Ok(builder.to_string())
+}
+
+///|
+/// Render a civil date-time with an explicit CLDR pattern.
+///
+/// Literal characters, including intentional leading and trailing spaces, are
+/// preserved. Unsupported fields such as `z` are skipped by default; use
+/// `format_pattern_with_policy` to preserve or reject them explicitly.
+pub fn format_pattern(
+  date : DateTime,
+  locale : @core.Locale,
+  pattern : String,
+) -> String {
+  match format_pattern_core(date, locale, pattern, Skip) {
+    Ok(text) => text
+    Err(_) => ""
+  }
+}
+
+///|
+/// Render an explicit CLDR pattern with an explicit unsupported-field policy.
+///
+/// `Reject` returns `UnsupportedField(field)` for fields such as `z` that this
+/// civil date-time implementation cannot render.
+pub fn format_pattern_with_policy(
+  date : DateTime,
+  locale : @core.Locale,
+  pattern : String,
+  unsupported : UnsupportedFieldPolicy,
+) -> Result[String, DateFormatError] {
+  format_pattern_core(date, locale, pattern, unsupported)
+}
+
+///|
+fn date_pattern(data : @data.DateData, style : DateStyle) -> String {
+  match style {
+    Short => data.short_date
+    Medium => data.medium_date
+    Long => data.long_date
+    Full => data.full_date
+  }
+}
+
+///|
+fn time_pattern(data : @data.DateData, style : TimeStyle) -> String {
+  match style {
+    Short => data.short_time
+    Medium => data.medium_time
+    Long => data.long_time
+    Full => data.full_time
+  }
 }
 
 ///|
@@ -154,13 +231,7 @@ pub fn format_date(
   style? : DateStyle,
 ) -> String {
   let data = resolve_date_data(locale)
-  let pattern = match style.unwrap_or(Medium) {
-    Short => data.short_date
-    Medium => data.medium_date
-    Long => data.long_date
-    Full => data.full_date
-  }
-  format_pattern(date, locale, pattern)
+  format_pattern(date, locale, date_pattern(data, style.unwrap_or(Medium)))
 }
 
 ///|
@@ -170,13 +241,63 @@ pub fn format_time(
   style? : TimeStyle,
 ) -> String {
   let data = resolve_date_data(locale)
-  let pattern = match style.unwrap_or(Medium) {
-    Short => data.short_time
-    Medium => data.medium_time
-    Long => data.long_time
-    Full => data.full_time
+  format_pattern(date, locale, time_pattern(data, style.unwrap_or(Medium)))
+}
+
+///|
+/// Format a time style with an explicit unsupported-field policy. This is
+/// useful for CLDR long/full time patterns, which contain timezone fields.
+pub fn format_time_with_policy(
+  date : DateTime,
+  locale : @core.Locale,
+  unsupported : UnsupportedFieldPolicy,
+  style? : TimeStyle,
+) -> Result[String, DateFormatError] {
+  let data = resolve_date_data(locale)
+  format_pattern_core(
+    date,
+    locale,
+    time_pattern(data, style.unwrap_or(Medium)),
+    unsupported,
+  )
+}
+
+///|
+fn same_date(left : DateTime, right : DateTime) -> Bool {
+  left.year == right.year && left.month == right.month && left.day == right.day
+}
+
+///|
+fn join_date_range(
+  data : @data.DateData,
+  start : String,
+  end : String,
+) -> String {
+  let fallback = if data.interval_fallback.length() == 0 {
+    "{0} \u{2013} {1}"
+  } else {
+    data.interval_fallback
   }
-  format_pattern(date, locale, pattern)
+  fallback.replace_all(old="{0}", new=start).replace_all(old="{1}", new=end)
+}
+
+///|
+/// Format a date range using the locale's CLDR interval fallback pattern.
+/// A range whose endpoints fall on the same date is rendered once.
+pub fn format_date_range(
+  start : DateTime,
+  end : DateTime,
+  locale : @core.Locale,
+  style? : DateStyle,
+) -> String {
+  if same_date(start, end) {
+    return format_date(start, locale, style=style.unwrap_or(Medium))
+  }
+  let data = resolve_date_data(locale)
+  let pattern = date_pattern(data, style.unwrap_or(Medium))
+  let start_text = format_pattern(start, locale, pattern)
+  let end_text = format_pattern(end, locale, pattern)
+  join_date_range(data, start_text, end_text)
 }
 
 ///|

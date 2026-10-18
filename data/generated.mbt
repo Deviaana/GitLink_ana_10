@@ -523,6 +523,7 @@ let en_dates : DateData = {
   long_time: "h:mm:ss a z",
   medium_time: "h:mm:ss a",
   short_time: "h:mm a",
+  interval_fallback: "{0} – {1}",
   months_wide: [
     "January", "February", "March", "April", "May", "June", "July", "August", "September",
     "October", "November", "December",
@@ -549,6 +550,7 @@ let zh_dates : DateData = {
   long_time: "z HH:mm:ss",
   medium_time: "HH:mm:ss",
   short_time: "HH:mm",
+  interval_fallback: "{0} – {1}",
   months_wide: [
     "一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月",
     "九月", "十月", "十一月", "十二月",
@@ -578,6 +580,7 @@ let de_dates : DateData = {
   long_time: "HH:mm:ss z",
   medium_time: "HH:mm:ss",
   short_time: "HH:mm",
+  interval_fallback: "{0} – {1}",
   months_wide: [
     "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September",
     "Oktober", "November", "Dezember",
@@ -604,6 +607,7 @@ let ja_dates : DateData = {
   long_time: "H:mm:ss z",
   medium_time: "H:mm:ss",
   short_time: "H:mm",
+  interval_fallback: "{0}～{1}",
   months_wide: [
     "1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月",
     "11月", "12月",
@@ -631,6 +635,7 @@ let ar_dates : DateData = {
   long_time: "h:mm:ss a z",
   medium_time: "h:mm:ss a",
   short_time: "h:mm a",
+  interval_fallback: "{0} – {1}",
   months_wide: [
     "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
     "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
@@ -661,6 +666,7 @@ let fr_dates : DateData = {
   long_time: "HH:mm:ss z",
   medium_time: "HH:mm:ss",
   short_time: "HH:mm",
+  interval_fallback: "{0} – {1}",
   months_wide: [
     "janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre",
     "octobre", "novembre", "décembre",

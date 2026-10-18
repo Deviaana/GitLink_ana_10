@@ -50,6 +50,13 @@ fn main {
     println(tag + "  " + @datetime.format_date(date, locale))
   }
   println("")
+  println("-- date range, 2026-10-18 to 2026-10-20 --")
+  let range_end = @datetime.DateTime::new(2026, 10, 20)
+  for tag in tags {
+    let locale = @core.Locale::parse(tag)
+    println(tag + "  " + @datetime.format_date_range(date, range_end, locale))
+  }
+  println("")
   println("-- time short, 17:42:05 --")
   for tag in tags {
     let locale = @core.Locale::parse(tag)

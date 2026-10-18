@@ -188,6 +188,9 @@ function dateData(locale) {
     long_time: greg.timeFormats.long ?? "",
     medium_time: greg.timeFormats.medium ?? "",
     short_time: greg.timeFormats.short ?? "",
+    interval_fallback:
+      greg.dateTimeFormats.intervalFormats?.intervalFormatFallback ??
+      "{0} \u2013 {1}",
     months_wide: monthsWide,
     months_abbr: monthsAbbr,
     days_wide: daysWide,
@@ -246,6 +249,7 @@ function emitDate(locale, d) {
     `  long_time: ${esc(d.long_time)},`,
     `  medium_time: ${esc(d.medium_time)},`,
     `  short_time: ${esc(d.short_time)},`,
+    `  interval_fallback: ${esc(d.interval_fallback)},`,
     `  months_wide: ${arr(d.months_wide)},`,
     `  months_abbr: ${arr(d.months_abbr)},`,
     `  days_wide: ${arr(d.days_wide)},`,

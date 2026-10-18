@@ -109,6 +109,7 @@ pub(all) struct DateData {
   long_time : String
   medium_time : String
   short_time : String
+  interval_fallback : String
   months_wide : Array[String]
   months_abbr : Array[String]
   days_wide : Array[String]

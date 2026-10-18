@@ -8,13 +8,22 @@ import {
 // Values
 pub fn format_date(DateTime, @core.Locale, style? : DateStyle) -> String
 
+pub fn format_date_range(DateTime, DateTime, @core.Locale, style? : DateStyle) -> String
+
 pub fn format_datetime(DateTime, @core.Locale, date_style? : DateStyle, time_style? : TimeStyle) -> String
 
 pub fn format_pattern(DateTime, @core.Locale, String) -> String
 
+pub fn format_pattern_with_policy(DateTime, @core.Locale, String, UnsupportedFieldPolicy) -> Result[String, DateFormatError]
+
 pub fn format_time(DateTime, @core.Locale, style? : TimeStyle) -> String
 
+pub fn format_time_with_policy(DateTime, @core.Locale, UnsupportedFieldPolicy, style? : TimeStyle) -> Result[String, DateFormatError]
+
 // Errors
+pub(all) suberror DateFormatError {
+  UnsupportedField(Char)
+}
 
 // Types and methods
 pub(all) enum DateStyle {
@@ -40,6 +49,12 @@ pub(all) enum TimeStyle {
   Medium
   Long
   Full
+}
+
+pub(all) enum UnsupportedFieldPolicy {
+  Skip
+  Preserve
+  Reject
 }
 
 // Type aliases

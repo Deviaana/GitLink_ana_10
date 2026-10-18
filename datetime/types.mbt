@@ -73,3 +73,18 @@ pub fn DateTime::weekday(self : DateTime) -> Int {
   let normalized = if remainder < 0 { remainder + 7 } else { remainder }
   (normalized + 4) % 7
 }
+
+///|
+/// How explicit date patterns handle fields that this package cannot render,
+/// such as timezone fields (`z`, `v`, `V`, `O`, `X`, `x`).
+pub(all) enum UnsupportedFieldPolicy {
+  Skip
+  Preserve
+  Reject
+}
+
+///|
+/// Error returned when an unsupported pattern field is rejected explicitly.
+pub(all) suberror DateFormatError {
+  UnsupportedField(Char)
+}

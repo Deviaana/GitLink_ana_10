@@ -33,12 +33,12 @@ Early alpha, but the core pipeline is implemented and tested.
 | Currency | Yes | symbol/code/name/narrow display, accounting patterns, ISO 4217 digits |
 | Percent | Yes | CLDR percent pattern and localized percent sign |
 | Plural rules | Yes | cardinal + ordinal, parser for the CLDR rule grammar |
-| Date / time | Yes | CLDR styles and explicit patterns, Gregorian only |
+| Date / time | Yes | CLDR styles, explicit patterns, date ranges, spacing-preserving output |
 | Relative time | Yes | future / past / zero, plural-aware |
 | Intl differential | Yes | 166 static fixtures across six locales |
 | Locales bundled | `en`, `zh`, `de`, `ja`, `fr`, `ar` | `latn` numbering system |
 | Compact notation | Not yet | `1.2万` / `1.2M` |
-| Time zones | Not yet | `z` fields are skipped |
+| Time zones | Not yet | `z` fields use explicit skip/preserve/reject policies |
 | Non-Gregorian calendars | Not yet | |
 
 ## Usage
@@ -54,6 +54,11 @@ let date = @datetime.DateTime::new(2026, 10, 18, hour=17, minute=42)
 @datetime.format_date(date, locale)                  // 18.10.2026
 @datetime.format_time(date, locale)                  // 17:42
 @datetime.format_pattern(date, locale, "EEEE, d. MMMM y")
+let end = @datetime.DateTime::new(2026, 10, 20)
+@datetime.format_date_range(date, end, locale)       // 18.10.2026 - 20.10.2026
+@datetime.format_pattern_with_policy(
+  date, locale, "yyyy-MM-dd z", @datetime.Reject,
+)                                                   // Err(UnsupportedField('z'))
 
 let rules = @plural.PluralRules::cached("ar")
 rules.select(3.0)                                    // few
@@ -61,6 +66,10 @@ rules.select(3.0)                                    // few
 @relative.format_relative(-3.0, @relative.Day, locale) // vor 3 Tagen
 // `format_relative` also accepts `rules=...` to reuse a precompiled rule set.
 ```
+
+Explicit patterns preserve literal whitespace, including leading and trailing
+spaces. Unsupported fields are skipped by default; `format_pattern_with_policy`
+and `format_time_with_policy` expose `Skip`, `Preserve` and `Reject`.
 
 Locale parsing is strict when requested, while `parse` remains best-effort:
 
@@ -155,7 +164,7 @@ Source: [unicode-org/cldr-json](https://github.com/unicode-org/cldr-json).
 Generated currency data is deduplicated: one shared ISO code table and one
 English-based symbol table are emitted once, while each locale stores only its
 symbol and narrow-symbol overrides plus localized names in currency-code order.
-This reduced `data/generated.mbt` from 40,088 to 34,697 bytes (13.4%). The
+This reduced `data/generated.mbt` from 40,088 to 34,923 bytes (12.9%). The
 generator runs `moon fmt` on the generated file so regeneration stays
 formatter-clean.
 
@@ -193,9 +202,10 @@ time comparisons treat U+202F (the CLDR narrow no-break space) and U+0020 (the
 space emitted by Node ICU in these patterns) as equivalent; all other spacing,
 including currency spacing, is compared exactly.
 
-Known exclusions are time zones, non-Gregorian calendars, compact notation and
-non-`latn` numbering systems. These are either outside the currently supported
-surface or tracked in the roadmap below.
+Known exclusions are timezone rendering, non-Gregorian calendars, compact
+notation and non-`latn` numbering systems. Timezone fields can be detected with
+`Reject` instead of being silently discarded. These exclusions are tracked in
+the roadmap below.
 
 ## Roadmap
 

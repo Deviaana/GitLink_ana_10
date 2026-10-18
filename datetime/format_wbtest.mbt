@@ -39,3 +39,64 @@ test "explicit pattern with quoted literal" {
   let en = @core.Locale::parse("en")
   assert_eq(format_pattern(date, en, "h 'o''clock' a"), "5 o'clock PM")
 }
+
+///|
+test "explicit patterns preserve intentional whitespace" {
+  let date = DateTime::new(2026, 10, 18)
+  let en = @core.Locale::parse("en")
+  assert_eq(format_pattern(date, en, " yyyy-MM-dd "), " 2026-10-18 ")
+  assert_eq(format_pattern(date, en, "yyyy 'at' HH:mm"), "2026 at 00:00")
+}
+
+///|
+test "unsupported fields can be skipped preserved or rejected" {
+  let date = DateTime::new(2026, 10, 18)
+  let en = @core.Locale::parse("en")
+  let skipped = format_pattern_with_policy(date, en, "yyyy-MM-dd z", Skip)
+  assert_eq(skipped.unwrap(), "2026-10-18 ")
+  let preserved = format_pattern_with_policy(
+    date,
+    en,
+    "yyyy-MM-dd zzzz",
+    Preserve,
+  )
+  assert_eq(preserved.unwrap(), "2026-10-18 zzzz")
+  let rejected = format_pattern_with_policy(date, en, "yyyy-MM-dd z", Reject)
+  match rejected {
+    Ok(_) => assert_eq("expected an unsupported field error", "ok")
+    Err(UnsupportedField(field)) => assert_eq(field, 'z')
+  }
+}
+
+///|
+test "quoted pattern letters are literals under the reject policy" {
+  let date = DateTime::new(2026, 10, 18)
+  let en = @core.Locale::parse("en")
+  let result = format_pattern_with_policy(date, en, "yyyy 'z'", Reject)
+  assert_eq(result.unwrap(), "2026 z")
+}
+
+///|
+test "long time patterns report timezone fields explicitly" {
+  let time = DateTime::new(2026, 10, 18, hour=17, minute=42, second=5)
+  let en = @core.Locale::parse("en")
+  let result = format_time_with_policy(time, en, Reject, style=Full)
+  match result {
+    Ok(_) => assert_eq("expected an unsupported timezone field", "ok")
+    Err(UnsupportedField(field)) => assert_eq(field, 'z')
+  }
+}
+
+///|
+test "date ranges use locale interval fallbacks" {
+  let start = DateTime::new(2026, 10, 18)
+  let end = DateTime::new(2026, 10, 20)
+  let en = @core.Locale::parse("en")
+  let ja = @core.Locale::parse("ja")
+  assert_eq(
+    format_date_range(start, end, en),
+    "Oct 18, 2026\u{2009}\u{2013}\u{2009}Oct 20, 2026",
+  )
+  assert_eq(format_date_range(start, end, ja), "2026/10/18\u{FF5E}2026/10/20")
+  assert_eq(format_date_range(start, start, en), "Oct 18, 2026")
+}
