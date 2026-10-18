@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/datetime"
+
+import {
+  "moonl10n/moonl10n/core",
+}
+
+// Values
+pub fn format_date(DateTime, @core.Locale, style? : DateStyle) -> String
+
+pub fn format_datetime(DateTime, @core.Locale, date_style? : DateStyle, time_style? : TimeStyle) -> String
+
+pub fn format_pattern(DateTime, @core.Locale, String) -> String
+
+pub fn format_time(DateTime, @core.Locale, style? : TimeStyle) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum DateStyle {
+  Short
+  Medium
+  Long
+  Full
+}
+
+pub(all) struct DateTime {
+  year : Int
+  month : Int
+  day : Int
+  hour : Int
+  minute : Int
+  second : Int
+}
+pub fn DateTime::new(Int, Int, Int, hour? : Int, minute? : Int, second? : Int) -> Self
+pub fn DateTime::weekday(Self) -> Int
+
+pub(all) enum TimeStyle {
+  Short
+  Medium
+  Long
+  Full
+}
+
+// Type aliases
+
+// Traits
+

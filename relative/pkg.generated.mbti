@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/relative"
+
+import {
+  "moonl10n/moonl10n/core",
+}
+
+// Values
+pub fn format_relative(Double, RelativeUnit, @core.Locale) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum RelativeUnit {
+  Year
+  Month
+  Week
+  Day
+  Hour
+  Minute
+  Second
+}
+
+// Type aliases
+
+// Traits
+

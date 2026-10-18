@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/data"
+
+// Values
+pub fn currency_digits(String) -> Int
+
+pub fn date_data(String) -> DateData?
+
+pub fn number_data(String) -> NumberData?
+
+pub fn plural_data(String) -> PluralData?
+
+pub fn relative_data(String) -> RelativeData?
+
+// Errors
+
+// Types and methods
+pub(all) struct DateData {
+  full_date : String
+  long_date : String
+  medium_date : String
+  short_date : String
+  full_time : String
+  long_time : String
+  medium_time : String
+  short_time : String
+  months_wide : Array[String]
+  months_abbr : Array[String]
+  days_wide : Array[String]
+  days_abbr : Array[String]
+  am : String
+  pm : String
+}
+
+pub(all) struct NumberData {
+  decimal : String
+  group : String
+  percent_sign : String
+  minus_sign : String
+  plus_sign : String
+  nan : String
+  infinity : String
+  decimal_pattern : String
+  percent_pattern : String
+  currency_pattern : String
+  accounting_pattern : String
+  currency_symbols : Array[(String, String)]
+}
+pub fn NumberData::currency_symbol(Self, String) -> String
+
+pub(all) struct PluralData {
+  cardinal : Array[(String, String)]
+  ordinal : Array[(String, String)]
+}
+
+pub(all) struct RelativeData {
+  year : RelativeUnitData
+  month : RelativeUnitData
+  week : RelativeUnitData
+  day : RelativeUnitData
+  hour : RelativeUnitData
+  minute : RelativeUnitData
+  second : RelativeUnitData
+}
+
+pub(all) struct RelativeUnitData {
+  future : Array[(String, String)]
+  past : Array[(String, String)]
+  zero : String?
+  one_future : String?
+  one_past : String?
+}
+
+// Type aliases
+
+// Traits
+

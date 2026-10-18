@@ -1,0 +1,52 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/plural"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub enum Condition {
+  Always
+  Never
+  And(Condition, Condition)
+  Or(Condition, Condition)
+  Relation(Operand, Int?, Relation, Array[Range])
+}
+
+pub enum Operand {
+  N
+  I
+  V
+  W
+  F
+  T
+  C
+  E
+}
+
+pub struct PluralRules {
+  ordinal : Bool
+  rules : Array[(String, Condition)]
+}
+pub fn PluralRules::new(String, ordinal? : Bool) -> Self
+pub fn PluralRules::select(Self, Double, visible_fraction_digits? : Int) -> String
+
+pub struct Range {
+  low : Double
+  high : Double
+}
+
+pub enum Relation {
+  Eq
+  NotEq
+  In
+  NotIn
+  Within
+  NotWithin
+}
+
+// Type aliases
+
+// Traits
+

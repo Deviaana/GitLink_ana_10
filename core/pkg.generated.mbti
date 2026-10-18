@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/core"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct Locale {
+  language : String
+  script : String
+  region : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn Locale::fallbacks(Self) -> Array[String]
+pub fn Locale::new(String, script? : String, region? : String) -> Self
+pub fn Locale::parse(String) -> Self
+pub fn Locale::same(Self, Self) -> Bool
+pub fn Locale::to_tag(Self) -> String
+
+// Type aliases
+
+// Traits
+

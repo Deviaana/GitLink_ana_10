@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonl10n/moonl10n/number"
+
+import {
+  "moonl10n/moonl10n/core",
+}
+
+// Values
+pub fn format_currency(Double, String, @core.Locale, options? : NumberOptions) -> String
+
+pub fn format_decimal(Double, @core.Locale, options? : NumberOptions) -> String
+
+pub fn format_percent(Double, @core.Locale, options? : NumberOptions) -> String
+
+pub fn format_with_pattern(Double, @core.Locale, String, options? : NumberOptions) -> String
+
+// Errors
+
+// Types and methods
+pub(all) struct NumberOptions {
+  min_fraction : Int?
+  max_fraction : Int?
+  grouping : Bool
+}
+pub fn NumberOptions::default() -> Self
+pub fn NumberOptions::with_fraction_digits(Int, Int) -> Self
+pub fn NumberOptions::without_grouping(Self) -> Self
+
+// Type aliases
+
+// Traits
+

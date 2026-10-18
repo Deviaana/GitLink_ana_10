@@ -1,0 +1,6 @@
+import {
+  "moonl10n/moonl10n/core",
+  "moonl10n/moonl10n/data",
+  "moonl10n/moonl10n/number",
+  "moonl10n/moonl10n/plural",
+}
