@@ -1,0 +1,60 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: publish to MoonCakes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MoonBit
+        uses: moonbit-community/setup-moonbit@main
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check
+        run: moon check
+
+      - name: Test
+        run: moon test
+
+      - name: Run README examples
+        run: moon run examples/readme
+
+      - name: Check conformance fixtures
+        run: node tools/gen-intl-fixtures.mjs --check
+
+      - name: Configure MoonCakes credentials
+        env:
+          MOONCAKES_USERNAME: ${{ secrets.MOONCAKES_USERNAME }}
+          MOONCAKES_TOKEN: ${{ secrets.MOONCAKES_TOKEN }}
+        run: |
+          if [ -z "$MOONCAKES_USERNAME" ] || [ -z "$MOONCAKES_TOKEN" ]; then
+            echo "Missing MOONCAKES_USERNAME or MOONCAKES_TOKEN repository secret." >&2
+            exit 1
+          fi
+          mkdir -p "$HOME/.moon"
+          printf '{"username":"%s","token":"%s"}\n' \
+            "$MOONCAKES_USERNAME" "$MOONCAKES_TOKEN" > "$HOME/.moon/credentials.json"
+
+      - name: Verify login
+        run: moon whoami
+
+      - name: Publish
+        run: moon publish

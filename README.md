@@ -36,6 +36,7 @@ Early alpha, but the core pipeline is implemented and tested.
 | Date / time | Yes | CLDR styles, explicit patterns, date ranges, spacing-preserving output |
 | Relative time | Yes | future / past / zero, plural-aware |
 | Intl differential | Yes | 178 static fixtures across six locales |
+| Engineering | Yes | CI matrix across wasm-gc/js/native, coverage, executable examples and tagged MoonCakes releases |
 | Locales bundled | `en`, `zh`, `de`, `ja`, `fr`, `ar` | `latn` numbering system |
 | Compact notation | Yes | short CLDR patterns with plural-aware suffixes |
 | Time zones | Not yet | `z` fields use explicit skip/preserve/reject policies |
@@ -147,10 +148,21 @@ rules.select_with_digits(
 | `datetime` | Civil date-time, weekday, CLDR date/time patterns |
 | `relative` | Relative time, composed from the number and plural packages |
 
-## Demo
+## Demos
+
+`cmd/main` prints a full cross-locale tour of the formatting APIs:
 
 ```bash
 moon run cmd/main
+```
+
+`examples/readme` is an executable version of the README snippets. It compiles
+and runs the documented calls, and its companion test pins their expected
+output:
+
+```bash
+moon run examples/readme
+moon test examples/readme
 ```
 
 ## Data pipeline
@@ -177,16 +189,31 @@ formatter-clean.
 ## Tests
 
 ```bash
-moon test
 moon check
+moon test
+moon test --target js
+moon test --target native
+moon coverage analyze -- -f summary
+node tools/gen-intl-fixtures.mjs --check
 ```
 
-Coverage currently includes strict locale parsing, likely subtags,
+Test coverage currently includes strict locale parsing, likely subtags,
 Accept-Language negotiation, locale fallback, grouping and fraction rules,
 negative subpatterns, ISO 4217 digits, cardinal and ordinal plural selection,
 date/time styles across locales, quoted number and date patterns,
 relative time, scientific and compact notation, and shared currency table
 overrides.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs the same test suite and the executable examples
+on `wasm-gc`, JavaScript and native backends. A separate quality job checks
+formatting, verifies the committed conformance fixtures and prints the
+`moon coverage` summary.
+
+`.github/workflows/publish.yml` publishes the module to MoonCakes when a `v*`
+tag is pushed. Configure the `MOONCAKES_USERNAME` and `MOONCAKES_TOKEN`
+repository secrets before creating the first release tag.
 
 ## Conformance
 

@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - wasm-gc
+          - js
+          - native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MoonBit
+        uses: moonbit-community/setup-moonbit@main
+        with:
+          version: latest
+
+      - name: Show toolchain
+        run: moon version --all
+
+      - name: Check
+        run: moon check --target ${{ matrix.target }}
+
+      - name: Test
+        run: moon test --target ${{ matrix.target }}
+
+      - name: Run README examples
+        run: moon run examples/readme --target ${{ matrix.target }}
+
+      - name: Run demo
+        run: moon run cmd/main --target ${{ matrix.target }}
+
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MoonBit
+        uses: moonbit-community/setup-moonbit@main
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check formatting
+        run: moon fmt --check
+
+      - name: Check conformance fixtures
+        run: node tools/gen-intl-fixtures.mjs --check
+
+      - name: Run conformance suite
+        run: moon test conformance
+
+      - name: Report coverage
+        run: moon coverage analyze -- -f summary
