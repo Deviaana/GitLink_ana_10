@@ -80,6 +80,14 @@ function numberData(locale) {
     percent_pattern: percent,
     currency_pattern: currency.standard ?? "¤#,##0.00",
     accounting_pattern: currency.accounting ?? "¤#,##0.00;(¤#,##0.00)",
+    currency_unit_pattern_one:
+      currency["unitPattern-count-one"] ??
+      currency["unitPattern-count-other"] ??
+      "{0} {1}",
+    currency_unit_pattern_other:
+      currency["unitPattern-count-other"] ??
+      currency["unitPattern-count-one"] ??
+      "{0} {1}",
     currency_spacing:
       currency.currencySpacing?.beforeCurrency?.insertBetween ??
       currency.currencySpacing?.afterCurrency?.insertBetween ??
@@ -156,6 +164,8 @@ function emitNumber(locale, d) {
     `  percent_pattern: ${esc(d.percent_pattern)},`,
     `  currency_pattern: ${esc(d.currency_pattern)},`,
     `  accounting_pattern: ${esc(d.accounting_pattern)},`,
+    `  currency_unit_pattern_one: ${esc(d.currency_unit_pattern_one)},`,
+    `  currency_unit_pattern_other: ${esc(d.currency_unit_pattern_other)},`,
     `  currency_spacing: ${esc(d.currency_spacing)},`,
     `  currency_symbols: ${tupleArr(d.currency_symbols)},`,
     `  currency_narrow_symbols: ${tupleArr(d.currency_narrow_symbols)},`,

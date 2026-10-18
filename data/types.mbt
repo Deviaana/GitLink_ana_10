@@ -12,6 +12,8 @@ pub(all) struct NumberData {
   percent_pattern : String
   currency_pattern : String
   accounting_pattern : String
+  currency_unit_pattern_one : String
+  currency_unit_pattern_other : String
   currency_spacing : String
   currency_symbols : Array[(String, String)]
   currency_narrow_symbols : Array[(String, String)]

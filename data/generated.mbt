@@ -14,6 +14,8 @@ let en_numbers : NumberData = {
   percent_pattern: "#,##0%",
   currency_pattern: "¤#,##0.00",
   accounting_pattern: "¤#,##0.00;(¤#,##0.00)",
+  currency_unit_pattern_one: "{0} {1}",
+  currency_unit_pattern_other: "{0} {1}",
   currency_spacing: " ",
   currency_symbols: [
     ("USD", "$"),
@@ -123,6 +125,8 @@ let zh_numbers : NumberData = {
   percent_pattern: "#,##0%",
   currency_pattern: "¤#,##0.00",
   accounting_pattern: "¤#,##0.00;(¤#,##0.00)",
+  currency_unit_pattern_one: "{0}{1}",
+  currency_unit_pattern_other: "{0}{1}",
   currency_spacing: " ",
   currency_symbols: [
     ("USD", "US$"),
@@ -232,6 +236,8 @@ let de_numbers : NumberData = {
   percent_pattern: "#,##0 %",
   currency_pattern: "#,##0.00 ¤",
   accounting_pattern: "#,##0.00 ¤",
+  currency_unit_pattern_one: "{0} {1}",
+  currency_unit_pattern_other: "{0} {1}",
   currency_spacing: " ",
   currency_symbols: [
     ("USD", "$"),
@@ -341,6 +347,8 @@ let ja_numbers : NumberData = {
   percent_pattern: "#,##0%",
   currency_pattern: "¤#,##0.00",
   accounting_pattern: "¤#,##0.00;(¤#,##0.00)",
+  currency_unit_pattern_one: "{0}{1}",
+  currency_unit_pattern_other: "{0}{1}",
   currency_spacing: " ",
   currency_symbols: [
     ("USD", "$"),
@@ -456,6 +464,8 @@ let ar_numbers : NumberData = {
   percent_pattern: "#,##0%",
   currency_pattern: "‏#,##0.00 ¤;‏-#,##0.00 ¤",
   accounting_pattern: "؜#,##0.00¤;(؜#,##0.00¤)",
+  currency_unit_pattern_one: "{0} {1}",
+  currency_unit_pattern_other: "{0} {1}",
   currency_spacing: " ",
   currency_symbols: [
     ("USD", "US$"),
@@ -569,6 +579,8 @@ let fr_numbers : NumberData = {
   percent_pattern: "#,##0 %",
   currency_pattern: "#,##0.00 ¤",
   accounting_pattern: "#,##0.00 ¤;(#,##0.00 ¤)",
+  currency_unit_pattern_one: "{0} {1}",
+  currency_unit_pattern_other: "{0} {1}",
   currency_spacing: " ",
   currency_symbols: [
     ("USD", "$US"),

@@ -51,8 +51,10 @@ test "currency respects ISO 4217 digits" {
 test "percent formatting" {
   let en = @core.Locale::parse("en")
   let de = @core.Locale::parse("de")
+  let ar = @core.Locale::parse("ar")
   assert_eq(format_percent(0.12, en), "12%")
   assert_eq(format_percent(0.12, de), "12\u{00A0}%")
+  assert_eq(format_percent(0.12, ar), "12\u{200E}%\u{200E}")
 }
 
 ///|
@@ -133,11 +135,11 @@ test "currency display modes" {
   )
   assert_eq(
     format_currency(1234.5, "USD", en, currency_options=name),
-    "US dollars\u{00A0}1,234.50",
+    "1,234.50 US dollars",
   )
   assert_eq(
     format_currency(1.0, "USD", en, options=no_fraction, currency_options=name),
-    "US dollar\u{00A0}1",
+    "1 US dollar",
   )
   assert_eq(
     format_currency(1234.5, "CAD", en, currency_options=narrow),
@@ -187,6 +189,6 @@ test "currency names support non-latin locales" {
   let name = CurrencyOptions::with_display(Name)
   assert_eq(
     format_currency(1234.5, "USD", ja, currency_options=name),
-    "米ドル\u{00A0}1,234.50",
+    "1,234.50米ドル",
   )
 }

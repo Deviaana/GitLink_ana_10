@@ -31,10 +31,11 @@ Early alpha, but the core pipeline is implemented and tested.
 | Locale parsing | BCP 47 subset | language / script / region + fallback chain |
 | Decimal | Yes | CLDR patterns, grouping, min/max fraction digits |
 | Currency | Yes | symbol/code/name/narrow display, accounting patterns, ISO 4217 digits |
-| Percent | Yes | CLDR percent pattern |
+| Percent | Yes | CLDR percent pattern and localized percent sign |
 | Plural rules | Yes | cardinal + ordinal, parser for the CLDR rule grammar |
 | Date / time | Yes | CLDR styles and explicit patterns, Gregorian only |
 | Relative time | Yes | future / past / zero, plural-aware |
+| Intl differential | Yes | 166 static fixtures across six locales |
 | Locales bundled | `en`, `zh`, `de`, `ja`, `fr`, `ar` | `latn` numbering system |
 | Compact notation | Not yet | `1.2万` / `1.2M` |
 | Time zones | Not yet | `z` fields are skipped |
@@ -141,11 +142,36 @@ Coverage currently includes locale fallback, grouping and fraction rules,
 negative subpatterns, ISO 4217 digits, cardinal and ordinal plural selection,
 date/time styles across locales, quoted pattern literals and relative time.
 
+## Conformance
+
+`conformance/intl_conformance_wbtest.mbt` contains 166 static white-box
+assertions generated from Node.js `Intl`, so CI only needs `moon test` and does
+not need Node.js at runtime. The suite covers six locales and the supported
+surface area: decimals and negative values, percent signs, currency
+symbol/code/name/narrow displays, accounting, medium dates, short times,
+relative day/hour output, cardinal plurals and visible fraction digits.
+
+Regenerate or verify the committed fixtures with:
+
+```bash
+node tools/gen-intl-fixtures.mjs
+node tools/gen-intl-fixtures.mjs --check
+```
+
+The generator records the Node and ICU versions in the fixture header. Date and
+time comparisons treat U+202F (the CLDR narrow no-break space) and U+0020 (the
+space emitted by Node ICU in these patterns) as equivalent; all other spacing,
+including currency spacing, is compared exactly.
+
+Known exclusions are time zones, non-Gregorian calendars, compact notation and
+non-`latn` numbering systems. These are either outside the currently supported
+surface or tracked in the roadmap below.
+
 ## Roadmap
 
 1. Compact notation and unit formatting.
-2. CLDR conformance suites for numbers, dates and plurals.
-3. Differential testing against `Intl` and ICU4X.
+2. Official CLDR conformance suites for numbers, dates and plurals.
+3. ICU4X differential testing alongside the current Node `Intl` suite.
 4. IANA timezone data and non-Gregorian calendars.
 5. Non-`latn` numbering systems (Arabic-Indic, Devanagari, ...).
 6. WASM playground and an npm-consumable bundle.

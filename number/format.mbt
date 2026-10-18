@@ -24,6 +24,8 @@ fn fallback_number_data() -> @data.NumberData {
         percent_pattern: "#,##0%",
         currency_pattern: "¤#,##0.00",
         accounting_pattern: "¤#,##0.00;(¤#,##0.00)",
+        currency_unit_pattern_one: "{0} {1}",
+        currency_unit_pattern_other: "{0} {1}",
         currency_spacing: "\u{00A0}",
         currency_symbols: [],
         currency_narrow_symbols: [],
@@ -80,13 +82,16 @@ fn CurrencyReplacement::needs_spacing(
 }
 
 ///|
-fn has_ascii_alphabetic(text : String) -> Bool {
+fn is_alpha_currency_text(text : String) -> Bool {
+  if text.length() == 0 {
+    return false
+  }
   for c in text.iter() {
-    if c.is_ascii_alphabetic() {
-      return true
+    if !c.is_ascii_alphabetic() {
+      return false
     }
   }
-  false
+  true
 }
 
 ///|
@@ -310,7 +315,7 @@ pub fn format_percent(
   format_core(
     ratio * 100.0,
     locale,
-    data.percent_pattern,
+    data.percent_pattern.replace_all(old="%", new=data.percent_sign),
     options.unwrap_or(NumberOptions::default()),
     None,
   )
@@ -342,8 +347,8 @@ fn make_currency_replacement(
     NarrowSymbol => narrow
   }
   let alpha_display = match display {
-    Symbol => has_ascii_alphabetic(shown)
-    NarrowSymbol => has_ascii_alphabetic(shown)
+    Symbol => is_alpha_currency_text(shown)
+    NarrowSymbol => is_alpha_currency_text(shown)
     Code | Name => true
   }
   {
@@ -353,8 +358,40 @@ fn make_currency_replacement(
     name,
     spacing: data.currency_spacing,
     alpha_display,
-    alpha_narrow: has_ascii_alphabetic(narrow),
+    alpha_narrow: is_alpha_currency_text(narrow),
   }
+}
+
+///|
+fn format_currency_name(
+  amount : Double,
+  code : String,
+  locale : @core.Locale,
+  data : @data.NumberData,
+  options : NumberOptions,
+  min_fraction : Int,
+  max_fraction : Int,
+) -> String {
+  let upper = code.to_upper()
+  let digits = format_digits(amount.abs(), max_fraction, min_fraction)
+  let category = @plural.PluralRules::cached(locale.language).select_with_digits(
+    digits.0,
+    digits.1,
+  )
+  let name = data.currency_name(upper, category)
+  let number_options : NumberOptions = {
+    min_fraction: Some(min_fraction),
+    max_fraction: Some(max_fraction),
+    grouping: options.grouping,
+  }
+  let number = format_decimal(amount, locale, options=number_options)
+  let raw_pattern = if category == "one" {
+    data.currency_unit_pattern_one
+  } else {
+    data.currency_unit_pattern_other
+  }
+  let pattern = if raw_pattern.length() == 0 { "{0} {1}" } else { raw_pattern }
+  pattern.replace_all(old="{0}", new=number).replace_all(old="{1}", new=name)
 }
 
 ///|
@@ -401,19 +438,25 @@ pub fn format_currency(
 ) -> String {
   let data = resolve_number_data(locale)
   let currency_opts = currency_options.unwrap_or(CurrencyOptions::default())
+  let resolved = options.unwrap_or(NumberOptions::default())
+  let digits = @data.currency_digits(code)
+  let min_fraction = resolved.min_fraction.unwrap_or(digits)
+  let max_fraction = resolved.max_fraction.unwrap_or(digits)
+  let is_name = match currency_opts.display {
+    Name => true
+    _ => false
+  }
+  if is_name {
+    return format_currency_name(
+      amount, code, locale, data, resolved, min_fraction, max_fraction,
+    )
+  }
   let pattern = if currency_opts.accounting && amount < 0.0 {
     data.accounting_pattern
   } else {
     data.currency_pattern
   }
-  format_currency_impl(
-    amount,
-    code,
-    locale,
-    pattern,
-    options.unwrap_or(NumberOptions::default()),
-    currency_opts,
-  )
+  format_currency_impl(amount, code, locale, pattern, resolved, currency_opts)
 }
 
 ///|

@@ -1,0 +1,7 @@
+import {
+  "moonl10n/moonl10n/core",
+  "moonl10n/moonl10n/datetime",
+  "moonl10n/moonl10n/number",
+  "moonl10n/moonl10n/plural",
+  "moonl10n/moonl10n/relative",
+} for "wbtest"
