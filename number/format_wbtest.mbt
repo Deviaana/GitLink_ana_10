@@ -81,3 +81,23 @@ test "zero and very small values" {
   assert_eq(format_decimal(0.0, locale), "0")
   assert_eq(format_decimal(0.0001, locale), "0")
 }
+
+///|
+test "rounding avoids binary floating point drift" {
+  let en = @core.Locale::parse("en")
+  let money = NumberOptions::with_fraction_digits(2, 2)
+  assert_eq(format_decimal(1.005, en, options=money), "1.01")
+  assert_eq(format_decimal(2.675, en, options=money), "2.68")
+  assert_eq(format_decimal(1.0049, en, options=money), "1.00")
+  assert_eq(format_decimal(999.995, en, options=money), "1,000.00")
+  assert_eq(format_currency(1.005, "USD", en), "$1.01")
+  assert_eq(format_currency(-1.005, "USD", en), "-$1.01")
+}
+
+///|
+test "scientific notation input expands" {
+  let en = @core.Locale::parse("en")
+  let wide = NumberOptions::with_fraction_digits(7, 7)
+  assert_eq(format_decimal(1.0e-7, en, options=wide), "0.0000001")
+  assert_eq(format_decimal(1.0e21, en), "1,000,000,000,000,000,000,000")
+}

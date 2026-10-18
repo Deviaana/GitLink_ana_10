@@ -102,22 +102,9 @@ fn format_core(
   } else {
     min_fraction
   }
-  let mut factor = 1.0
-  for _ in 0..<max_fraction_clamped {
-    factor = factor * 10.0
-  }
-  let rounded = (absolute * factor).round() / factor
-  let raw = rounded.to_string()
-  let pieces : Array[String] = []
-  for piece in raw.split(".") {
-    pieces.push(piece.to_owned())
-  }
-  let mut int_digits = if pieces.length() > 0 && pieces[0].length() > 0 {
-    pieces[0]
-  } else {
-    "0"
-  }
-  let mut frac_digits = if pieces.length() > 1 { pieces[1] } else { "" }
+  let rounded = round_to_fraction(absolute.to_string(), max_fraction_clamped)
+  let mut int_digits = rounded.0
+  let mut frac_digits = rounded.1
   while frac_digits.length() > min_fraction_clamped &&
         frac_digits.has_suffix("0") {
     frac_digits = frac_digits[0:frac_digits.length() - 1].to_owned()
