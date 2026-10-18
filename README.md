@@ -54,10 +54,11 @@ let date = @datetime.DateTime::new(2026, 10, 18, hour=17, minute=42)
 @datetime.format_time(date, locale)                  // 17:42
 @datetime.format_pattern(date, locale, "EEEE, d. MMMM y")
 
-let rules = @plural.PluralRules::new("ar")
+let rules = @plural.PluralRules::cached("ar")
 rules.select(3.0)                                    // few
 
 @relative.format_relative(-3.0, @relative.Day, locale) // vor 3 Tagen
+// `format_relative` also accepts `rules=...` to reuse a precompiled rule set.
 ```
 
 With options:

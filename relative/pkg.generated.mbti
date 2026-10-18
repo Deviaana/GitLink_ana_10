@@ -3,10 +3,11 @@ package "moonl10n/moonl10n/relative"
 
 import {
   "moonl10n/moonl10n/core",
+  "moonl10n/moonl10n/plural",
 }
 
 // Values
-pub fn format_relative(Double, RelativeUnit, @core.Locale) -> String
+pub fn format_relative(Double, RelativeUnit, @core.Locale, rules? : @plural.PluralRules) -> String
 
 // Errors
 

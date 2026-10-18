@@ -29,6 +29,7 @@ pub struct PluralRules {
   ordinal : Bool
   rules : Array[(String, Condition)]
 }
+pub fn PluralRules::cached(String, ordinal? : Bool) -> Self
 pub fn PluralRules::new(String, ordinal? : Bool) -> Self
 pub fn PluralRules::select(Self, Double, visible_fraction_digits? : Int) -> String
 

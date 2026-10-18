@@ -44,7 +44,7 @@ fn main {
   println("")
   println("-- plural select 3 --")
   for tag in tags {
-    let rules = @plural.PluralRules::new(tag)
+    let rules = @plural.PluralRules::cached(tag)
     println(tag + "  " + rules.select(3.0))
   }
 }

@@ -76,6 +76,7 @@ pub fn format_relative(
   value : Double,
   unit : RelativeUnit,
   locale : @core.Locale,
+  rules? : @plural.PluralRules,
 ) -> String {
   let data = resolve_relative_data(locale)
   let unit_patterns = unit_data(data, unit)
@@ -98,7 +99,11 @@ pub fn format_relative(
     }
   }
   let magnitude = value.abs()
-  let category = @plural.PluralRules::new(locale.language).select(magnitude)
+  let plural_rules = match rules {
+    Some(custom) => custom
+    None => @plural.PluralRules::cached(locale.language)
+  }
+  let category = plural_rules.select(magnitude)
   let table = if value > 0.0 {
     unit_patterns.future
   } else {

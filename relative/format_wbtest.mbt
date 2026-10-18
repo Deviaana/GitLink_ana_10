@@ -31,3 +31,11 @@ test "japanese relative time" {
   assert_eq(format_relative(-3.0, Day, ja), "3 日前")
   assert_eq(format_relative(1.0, Day, ja), "明日")
 }
+
+///|
+test "relative time accepts injected plural rules" {
+  let en = @core.Locale::parse("en")
+  let rules = @plural.PluralRules::cached("en")
+  assert_eq(format_relative(3.0, Day, en, rules~), "in 3 days")
+  assert_eq(format_relative(1.0, Day, en, rules~), "tomorrow")
+}

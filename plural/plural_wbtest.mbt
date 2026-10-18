@@ -46,3 +46,23 @@ test "german cardinal rules" {
   assert_eq(rules.select(1.0), "one")
   assert_eq(rules.select(2.0), "other")
 }
+
+///|
+test "cached rules match freshly parsed rules" {
+  let fresh = PluralRules::new("ar")
+  let cached = PluralRules::cached("ar")
+  let values : Array[Double] = [0.0, 1.0, 2.0, 3.0, 11.0, 100.0]
+  for value in values {
+    assert_eq(cached.select(value), fresh.select(value))
+  }
+  let ordinal_fresh = PluralRules::new("en", ordinal=true)
+  let ordinal_cached = PluralRules::cached("en", ordinal=true)
+  assert_eq(ordinal_cached.select(21.0), ordinal_fresh.select(21.0))
+  assert_eq(ordinal_cached.select(4.0), ordinal_fresh.select(4.0))
+}
+
+///|
+test "cached rules fall back for unknown languages" {
+  let rules = PluralRules::cached("xx")
+  assert_eq(rules.select(1.0), "one")
+}
