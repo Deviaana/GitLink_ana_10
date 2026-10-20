@@ -75,6 +75,9 @@ jobs:
       - name: Check conformance fixtures
         run: node tools/gen-intl-fixtures.mjs --check
 
+      - name: Check CLDR version metadata
+        run: node tools/check-conformance.mjs
+
       - name: Run conformance suite
         run: moon test conformance
 

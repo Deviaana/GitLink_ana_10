@@ -6,6 +6,12 @@
 JavaScript 宿主的 `Intl`。项目面向 WASM-GC、JS 与 Native 后端，格式化规则由库内
 数据决定，不依赖运行时环境提供国际化能力。
 
+> **版本与符合性基线：CLDR 48 / UTS #35 revision 48。**
+>
+> 项目声明的是封闭范围内的“CLDR 48 子集符合性”，不是 UTS #35 全量实现或 CLDR
+> 官方全量一致性认证。完整终点、支持字段和排除项见
+> [`docs/conformance.md`](docs/conformance.md)。
+
 | 区域 | 数字 | 货币 | 日期 | 相对时间 |
 | --- | --- | --- | --- | --- |
 | `en` | 1,234,567.891 | $1,234.50 | Oct 18, 2026 | 3 days ago |
@@ -41,9 +47,10 @@ WASM-GC 或嵌入式环境后，宿主兜底不再存在，应用会突然失去
 | 日期与时间 | 已实现 | CLDR 风格、显式模式、日期区间、保留字面空格 |
 | 相对时间 | 已实现 | 过去/未来/当前，支持复数变化 |
 | 紧凑记数 | 已实现 | `1.2K`、`1.2万`、`1,2 Mio.` 等短格式 |
-| Intl 差分测试 | 已实现 | 6 个区域、178 条静态一致性用例 |
+| 符合性声明 | 已固定 | CLDR 48 / UTS #35 revision 48；6 个区域、`latn`、Gregorian |
+| Intl 差分测试 | 已实现 | 6 个区域、178 条静态差分用例 |
 | 工程化 | 已实现 | 三后端 CI、覆盖率、可执行示例、标签发布流程 |
-| 内置区域 | `en`、`zh`、`de`、`ja`、`fr`、`ar` | 当前使用 `latn` 数字系统 |
+| 内置区域 | `en`、`zh`、`de`、`ja`、`fr`、`ar` | 当前使用 `latn` 数字系统和 Gregorian 日历 |
 | 时区 | 暂未实现 | `z` 字段支持跳过、保留或报错策略 |
 | 非公历日历 | 暂未实现 | 当前使用 Gregorian 日历 |
 
@@ -185,12 +192,15 @@ moon test examples/readme
 生成代码已经提交到仓库，因此使用者不需要安装 Node.js。需要刷新数据时执行：
 
 ```bash
-node tools/fetch-cldr.mjs   # 下载锁定版本的 CLDR JSON 子集
+node tools/fetch-cldr.mjs   # 下载 CLDR 48 JSON 子集（固定 ref 见 baseline）
 node tools/gen-cldr.mjs     # 重新生成并格式化 data/generated.mbt
+node tools/check-conformance.mjs  # 校验版本、文档和生成数据一致
 moon test
 ```
 
 数据来源：[unicode-org/cldr-json](https://github.com/unicode-org/cldr-json)。
+抓取脚本不会使用移动的 `main` 作为发布基线：默认 ref 记录在
+`tools/cldr-baseline.json`，下载后还会检查 supplemental 数据的 `_cldrVersion`。
 
 生成器会对货币数据进行去重：共享的 ISO 代码表和基于英语的符号表只生成一次，
 每个区域只保存自己的符号、窄符号覆盖以及按货币代码排列的本地名称。紧凑记数表
@@ -223,13 +233,24 @@ node tools/gen-intl-fixtures.mjs --check
 `.github/workflows/publish.yml` 会在推送 `v*` 标签后将模块发布到 MoonCakes。
 首次发布前需要配置 `MOONCAKES_USERNAME` 与 `MOONCAKES_TOKEN` 两个仓库 Secrets。
 
-## 一致性测试
+## 符合性测试与边界
 
-`conformance/intl_conformance_wbtest.mbt` 包含 178 条由 Node.js `Intl` 生成的
-静态白盒断言。因此 CI 运行时只需要 `moon test`，不需要 Node.js 参与格式化。
+`conformance/intl_conformance_wbtest.mbt` 包含 178 条由 Node.js 24.13.0 / ICU
+77.1 生成的静态白盒断言。因此 CI 运行时只需要 `moon test`，不需要 Node.js 参与
+格式化。当前 `moon test` 共 **255 项测试**，其中 178 项为 Intl 差分用例。
 测试覆盖 6 个区域，包括十进制与负数、百分号、货币符号/代码/名称/窄符号、
 accounting 模式、日期、时间、相对日/小时、科学计数法、紧凑记数、基数复数和
 可见小数位。
+
+这些断言验证的是“声明的支持面”，不等同于 UTS #35 全量符合性。支持面之外的时区、
+非 Gregorian 日历、非 `latn` 数字系统、单位、消息格式等能力明确不在 0.1.x 的
+符合性终点内；日期模式的未支持字段可通过 `Reject` 策略显式返回错误。
+
+版本和测试头信息的机器校验：
+
+```bash
+node tools/check-conformance.mjs
+```
 
 重新生成或校验一致性数据：
 
@@ -247,10 +268,14 @@ node tools/gen-intl-fixtures.mjs --check
 当前明确不包含时区渲染、非公历日历和非 `latn` 数字系统。时区字段可以通过
 `Reject` 策略被显式检测，而不是静默丢弃。这些能力列在后续路线图中。
 
+完整的排除项以 [`docs/conformance.md`](docs/conformance.md) 第 3.5 节为准，包括
+单位格式化、消息格式、人员姓名、排序/转写、日期区间 skeleton 和 CLDR 官方全量
+测试套件。超出该边界的输出不应被解读为“完整 CLDR 实现”。
+
 ## 路线图
 
 1. 单位格式化与紧凑记数长格式。
-2. 接入数字、日期和复数的 CLDR 官方一致性测试套件。
+2. 接入数字、日期和复数的 CLDR 官方一致性测试套件（当前不在 0.1.x 符合性终点内）。
 3. 在现有 Node `Intl` 差分测试之外增加 ICU4X 差分测试。
 4. IANA 时区数据与非公历日历。
 5. 非 `latn` 数字系统（阿拉伯-印度数字、天城文数字等）。

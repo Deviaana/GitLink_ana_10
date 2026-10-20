@@ -1,0 +1,12 @@
+{
+  "cldrVersion": "48",
+  "uts35Revision": "48",
+  "cldrJsonRef": "48.0.0",
+  "cldrJsonRefFallback": "release-48",
+  "numberingSystem": "latn",
+  "calendar": "gregory",
+  "locales": ["en", "zh", "de", "ja", "fr", "ar"],
+  "nodeVersion": "24.13.0",
+  "icuVersion": "77.1",
+  "intlFixtures": 178
+}

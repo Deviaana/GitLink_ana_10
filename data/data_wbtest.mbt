@@ -1,4 +1,12 @@
 ///|
+test "CLDR baseline metadata stays pinned" {
+  assert_eq(cldr_version(), "48")
+  assert_eq(cldr_uts35_revision(), "48")
+  assert_eq(cldr_numbering_system(), "latn")
+  assert_eq(cldr_calendar(), "gregory")
+}
+
+///|
 test "currency symbols use shared base and locale overrides" {
   let en = number_data("en").unwrap()
   let zh = number_data("zh").unwrap()
