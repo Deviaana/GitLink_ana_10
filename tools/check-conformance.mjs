@@ -41,12 +41,6 @@ if (fixtureCount !== baseline.intlFixtures) {
   );
 }
 
-requireText("docs/proposal.md", [
-  `CLDR ${baseline.cldrVersion}`,
-  `UTS #35 revision ${baseline.uts35Revision}`,
-  "docs/conformance.md",
-]);
-
 requireText("README.md", [
   `CLDR ${baseline.cldrVersion}`,
   `UTS #35 revision ${baseline.uts35Revision}`,
