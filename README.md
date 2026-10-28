@@ -33,6 +33,13 @@ WASM-GC 或嵌入式环境后，宿主兜底不再存在，应用会突然失去
 - 同一套规则在 WASM-GC、JS 和 Native 后端保持一致。
 - 可被图表、文档排版、UI 组件、日志系统、账单和后台服务复用。
 
+MoonBit 已有 `moonlocale` 等跨后端 locale 库，基础格式化能力存在重叠。
+`moonl10n` 不把“跨后端”本身当作差异，而是把 CLDR 数据契约、可复现生成、
+结构化结果和可机器验证的一致性作为核心：即使其他库也能输出本地化字符串，
+`moonl10n` 仍能回答“结果是否与固定 CLDR 基线一致、数据从哪来、出错时如何显式
+失败”。完整对比与证据见
+[`docs/moonlocale-comparison.md`](docs/moonlocale-comparison.md)。
+
 ## 当前能力
 
 项目当前处于早期 alpha 阶段，核心链路已经实现并通过测试。
@@ -283,7 +290,9 @@ node tools/gen-intl-fixtures.mjs --check
 
 ## 项目申报书
 
-竞赛申报书与生态调研位于 [`docs/proposal.md`](docs/proposal.md)。
+竞赛申报书与生态调研位于 [`docs/proposal.md`](docs/proposal.md)。与
+`zlhahaha/moonlocale` 的逐项对比、差异化说明和申诉可用表述见
+[`docs/moonlocale-comparison.md`](docs/moonlocale-comparison.md)。
 
 ## 许可证
 
