@@ -65,32 +65,126 @@ pub fn expand_decimal(raw : String) -> (String, String) {
 }
 
 ///|
-/// Add one to the decimal formed by `int_part` and `frac_part`.
-fn increment_decimal(int_part : String, frac_part : String) -> (String, String) {
-  let digits = (int_part + frac_part).to_array()
+fn strip_leading_zeroes(text : String) -> String {
+  let mut first = 0
+  while first + 1 < text.length() && text.get_char(first).unwrap() == '0' {
+    first = first + 1
+  }
+  text[first:text.length()].to_owned()
+}
+
+///|
+fn add_small_unsigned(text : String, amount : Int32) -> String {
+  let digits = text.to_array()
   let mut index = digits.length() - 1
-  let mut carry = true
-  while index >= 0 && carry {
-    let value = digits[index].to_int() - 48
-    if value == 9 {
-      digits[index] = '0'
-      index = index - 1
-    } else {
-      digits[index] = Int32::unsafe_to_char(value + 49)
-      carry = false
-    }
+  let mut carry = amount
+  while index >= 0 && carry > 0 {
+    let sum = digits[index].to_int() - 48 + carry
+    digits[index] = Int32::unsafe_to_char(48 + sum % 10)
+    carry = sum / 10
+    index = index - 1
   }
-  let text = String::from_array(digits)
-  let int_length = int_part.length()
-  if carry {
-    let shifted = "1" + text
-    (
-      shifted[0:int_length + 1].to_owned(),
-      shifted[int_length + 1:shifted.length()].to_owned(),
-    )
+  let result = String::from_array(digits)
+  if carry > 0 {
+    carry.to_string() + result
   } else {
-    (text[0:int_length].to_owned(), text[int_length:text.length()].to_owned())
+    result
   }
+}
+
+///|
+fn subtract_small_unsigned(text : String, amount : Int32) -> String {
+  let digits = text.to_array()
+  let mut index = digits.length() - 1
+  let mut borrow = amount
+  let mut borrowed = 0
+  while index >= 0 && (borrow > 0 || borrowed > 0) {
+    let part = borrow % 10 + borrowed
+    borrow = borrow / 10
+    let value = digits[index].to_int() - 48
+    if value < part {
+      digits[index] = Int32::unsafe_to_char(48 + value + 10 - part)
+      borrowed = 1
+    } else {
+      digits[index] = Int32::unsafe_to_char(48 + value - part)
+      borrowed = 0
+    }
+    index = index - 1
+  }
+  String::from_array(digits)
+}
+
+///|
+fn decimal_mod(text : String, divisor : Int32) -> Int32 {
+  let mut remainder = 0
+  for c in text.iter() {
+    remainder = (remainder * 10 + c.to_int() - 48) % divisor
+  }
+  remainder
+}
+
+///|
+fn digit_at(text : String, index : Int32) -> Int32 {
+  match text.get_char(index) {
+    Some(c) => c.to_int() - 48
+    None => 0
+  }
+}
+
+///|
+fn place_scaled_digits(scaled : String, scale : Int32) -> (String, String) {
+  let normalized = strip_leading_zeroes(scaled)
+  if scale >= 0 {
+    let min_length = scale + 1
+    let text = normalized.pad_start(min_length, '0')
+    let split = text.length() - scale
+    (text[0:split].to_owned(), text[split:text.length()].to_owned())
+  } else {
+    (normalized + zero_string(-scale), "")
+  }
+}
+
+///|
+/// Round a non-negative decimal string to `scale` decimal places using a
+/// decimal `increment` (1-9 in a CLDR fraction pattern) and round-half-away-
+/// from-zero. A negative scale rounds to a power of ten in the integer part.
+pub fn round_to_scale(
+  raw : String,
+  scale : Int32,
+  increment : Int32,
+) -> (String, String) {
+  let bounded_scale = if scale > 15 {
+    15
+  } else if scale < -15 {
+    -15
+  } else {
+    scale
+  }
+  let unit = if increment < 1 { 1 } else { increment }
+  let parts = expand_decimal(raw)
+  let digits = parts.0 + parts.1
+  let point = parts.0.length()
+  let keep = point + bounded_scale
+  let padded_digits = if keep > digits.length() {
+    digits.pad_end(keep, '0')
+  } else {
+    digits
+  }
+  let kept = if keep <= 0 {
+    "0"
+  } else if keep >= padded_digits.length() {
+    padded_digits
+  } else {
+    padded_digits[0:keep].to_owned()
+  }
+  let tail = digit_at(padded_digits, keep)
+  let remainder = decimal_mod(kept, unit)
+  let rounded = if remainder * 10 + tail >= unit * 5 {
+    add_small_unsigned(kept, unit - remainder)
+  } else {
+    subtract_small_unsigned(kept, remainder)
+  }
+  place_scaled_digits(rounded, bounded_scale)
 }
 
 ///|
@@ -100,19 +194,7 @@ pub fn round_to_fraction(
   raw : String,
   max_fraction : Int32,
 ) -> (String, String) {
-  let parts = expand_decimal(raw)
-  let int_part = parts.0
-  let frac_part = parts.1
-  if frac_part.length() <= max_fraction {
-    return (int_part, frac_part)
-  }
-  let kept = frac_part[0:max_fraction].to_owned()
-  let next = frac_part.get_char(max_fraction).unwrap()
-  if next.to_int() >= 53 {
-    increment_decimal(int_part, kept)
-  } else {
-    (int_part, kept)
-  }
+  round_to_scale(raw, max_fraction, 1)
 }
 
 ///|

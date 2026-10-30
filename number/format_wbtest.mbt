@@ -13,6 +13,11 @@ test "explicit fraction digits" {
   let options = NumberOptions::with_fraction_digits(2, 2)
   assert_eq(format_decimal(1.2345, locale, options~), "1.23")
   assert_eq(format_decimal(1.0, locale, options~), "1.00")
+  assert_eq(format_with_pattern(0.2, locale, ".00"), ".20")
+  assert_eq(format_with_pattern(0.0, locale, ".00"), ".00")
+  assert_eq(format_with_pattern(1.2, locale, ".00"), "1.20")
+  assert_eq(format_with_pattern(0.2, locale, "#.00"), ".20")
+  assert_eq(format_with_pattern(0.2, locale, "#.##"), "0.2")
 }
 
 ///|
@@ -42,9 +47,14 @@ test "currency respects ISO 4217 digits" {
   let en = @core.Locale::parse("en")
   let de = @core.Locale::parse("de")
   let ja = @core.Locale::parse("ja")
+  let zero = 0.0
+  let infinity = 1.0 / zero
+  let nan = zero / zero
   assert_eq(format_currency(1234.5, "USD", en), "$1,234.50")
   assert_eq(format_currency(1234.5, "EUR", de), "1.234,50\u{00A0}€")
   assert_eq(format_currency(1234.5, "JPY", ja), "￥1,235")
+  assert_eq(format_currency(infinity, "USD", en), "$∞")
+  assert_eq(format_currency(nan, "USD", en), "$NaN")
 }
 
 ///|
@@ -52,9 +62,15 @@ test "percent formatting" {
   let en = @core.Locale::parse("en")
   let de = @core.Locale::parse("de")
   let ar = @core.Locale::parse("ar")
+  let zero = 0.0
+  let infinity = 1.0 / zero
+  let nan = zero / zero
   assert_eq(format_percent(0.12, en), "12%")
   assert_eq(format_percent(0.12, de), "12\u{00A0}%")
   assert_eq(format_percent(0.12, ar), "12\u{200E}%\u{200E}")
+  assert_eq(format_percent(nan, en), "NaN%")
+  assert_eq(format_percent(infinity, en), "∞%")
+  assert_eq(format_percent(-infinity, en), "-∞%")
 }
 
 ///|
@@ -129,6 +145,9 @@ test "currency display modes" {
   let name = CurrencyOptions::with_display(Name)
   let narrow = CurrencyOptions::with_display(NarrowSymbol)
   let no_fraction = NumberOptions::with_fraction_digits(0, 0)
+  let zero = 0.0
+  let infinity = 1.0 / zero
+  let nan = zero / zero
   assert_eq(
     format_currency(1234.5, "USD", en, currency_options=code),
     "USD\u{00A0}1,234.50",
@@ -144,6 +163,14 @@ test "currency display modes" {
   assert_eq(
     format_currency(1234.5, "CAD", en, currency_options=narrow),
     "$1,234.50",
+  )
+  assert_eq(
+    format_currency(nan, "USD", en, currency_options=name),
+    "NaN US dollars",
+  )
+  assert_eq(
+    format_currency(-infinity, "USD", en, currency_options=name),
+    "-∞ US dollars",
   )
 }
 
@@ -197,6 +224,7 @@ test "currency names support non-latin locales" {
 test "quoted pattern literals and currency markers" {
   let en = @core.Locale::parse("en")
   assert_eq(format_with_pattern(12.5, en, "0.0 'kg'"), "12.5 kg")
+  assert_eq(format_with_pattern(1.0, en, "0''"), "1'")
   assert_eq(format_with_pattern(-12.5, en, "0.0 ';'"), "-12.5 ;")
   assert_eq(
     format_currency_with_pattern(1234.5, "USD", en, "¤¤ 'total' #,##0.00"),
@@ -206,6 +234,16 @@ test "quoted pattern literals and currency markers" {
     format_currency_with_pattern(1234.5, "USD", en, "#,##0.00 'in' ¤¤"),
     "1,234.50 in USD",
   )
+  assert_eq(
+    format_currency_with_pattern(1234.5, "USD", en, "'\u{00A4}'#,##0.00"),
+    "\u{00A4}1,234.50",
+  )
+  assert_eq(
+    format_currency_with_pattern(1234.5, "USD", en, "#,##0.00'\u{00A4}'"),
+    "1,234.50\u{00A4}",
+  )
+  let ar = @core.Locale::parse("ar")
+  assert_eq(format_with_pattern(0.125, ar, "'%'0.0"), "%0.1")
 }
 
 ///|
@@ -218,6 +256,55 @@ test "scientific patterns render mantissa and exponent" {
   assert_eq(format_with_pattern(9.99, en, "0.0E0"), "1.0E1")
   assert_eq(format_with_pattern(1234567.0, en, "0.###E+0"), "1.235E+6")
   assert_eq(format_with_pattern(1234.0, en, "0.0E0 'm'"), "1.2E3 m")
+  assert_eq(format_with_pattern(1234.56, en, "0.05E0"), "1.25E3")
+  assert_eq(format_with_pattern(1234.56, en, "@@@E0"), "1.23E3")
+  assert_eq(format_with_pattern(9.999, en, "@@@E0"), "1.00E1")
+}
+
+///|
+test "significant digit patterns follow CLDR @" {
+  let en = @core.Locale::parse("en")
+  assert_eq(format_with_pattern(0.0, en, "@@@"), "0.00")
+  assert_eq(format_with_pattern(1.0, en, "@@@"), "1.00")
+  assert_eq(format_with_pattern(0.12345, en, "@@@"), "0.123")
+  assert_eq(format_with_pattern(1234.56, en, "@@@"), "1230")
+  assert_eq(format_with_pattern(12345.0, en, "@@@"), "12300")
+  assert_eq(format_with_pattern(1.0, en, "@@##"), "1.0")
+  assert_eq(format_with_pattern(0.12345, en, "@@##"), "0.1235")
+  assert_eq(format_with_pattern(1234.56, en, "@@##"), "1235")
+}
+
+///|
+test "rounding increments come from 1-9 pattern digits" {
+  let en = @core.Locale::parse("en")
+  assert_eq(format_with_pattern(1.22, en, "0.05"), "1.20")
+  assert_eq(format_with_pattern(1.23, en, "0.05"), "1.25")
+  assert_eq(format_with_pattern(1.225, en, "0.05"), "1.25")
+  assert_eq(format_with_pattern(1.23456, en, "0.005"), "1.235")
+  assert_eq(format_with_pattern(1234.56, en, "#,##0.05"), "1,234.55")
+  assert_eq(format_with_pattern(1.15, en, "0.25"), "1.25")
+  assert_eq(format_with_pattern(1.24, en, "0.25"), "1.25")
+  assert_eq(format_with_pattern(-1.225, en, "0.05"), "-1.25")
+}
+
+///|
+test "percent and permille pattern markers scale the value" {
+  let en = @core.Locale::parse("en")
+  assert_eq(format_with_pattern(0.125, en, "0%"), "13%")
+  assert_eq(format_with_pattern(0.125, en, "0.0%"), "12.5%")
+  assert_eq(format_with_pattern(0.125, en, "0‰"), "125‰")
+  assert_eq(format_with_pattern(0.125, en, "'%'0.0"), "%0.1")
+}
+
+///|
+test "pad escape uses the following character and pattern width" {
+  let en = @core.Locale::parse("en")
+  assert_eq(format_with_pattern(1.2, en, "*_#,##0.00"), "____1.20")
+  assert_eq(format_with_pattern(-12.3, en, "*_#,##0.00"), "-__12.30")
+  assert_eq(format_with_pattern(-12.3, en, "*_#,##0.00;(#,##0.00)"), "(_12.30)")
+  assert_eq(format_with_pattern(1.2, en, "*_$#,##0.00"), "$____1.20")
+  assert_eq(format_with_pattern(1.2, en, "*_#,##0.00 kg"), "____1.20 kg")
+  assert_eq(format_with_pattern(1.2, en, "0.00*x"), "1.20")
 }
 
 ///|

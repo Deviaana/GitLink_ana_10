@@ -133,6 +133,11 @@ fn format_pattern_core(
   for token in @pattern.tokenize_pattern(pattern) {
     match token {
       @pattern.Literal(text) => builder.write_stringview(text)
+      @pattern.Quoted(text) => builder.write_stringview(text)
+      @pattern.Pad(pad) => {
+        builder.write_object('*')
+        builder.write_object(pad)
+      }
       @pattern.Field(field, count) =>
         if is_supported_field(field) {
           append_field(builder, field, count, date, data)

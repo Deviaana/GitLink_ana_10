@@ -35,9 +35,9 @@
 | 问题定位 | 基础格式化层重叠 | 收窄为“CLDR 48 子集格式化内核”，不承担通用翻译框架职责 | `docs/conformance.md` 第 3 节 |
 | 数据契约 | 不以对方缺失为前提 | 固定 CLDR 48 / UTS #35 revision 48、6 个内置区域、`latn`、Gregorian；版本变化必须同步数据、测试和文档 | `tools/cldr-baseline.json`、`docs/conformance.md` 第 2、4 节 |
 | 数据交付 | 独立实现 | 抓取、裁剪、去重后生成 MoonBit 常量并提交到仓库；运行时不读 JSON、不做文件 IO、不依赖 FFI | `data/generated.mbt`、`tools/fetch-cldr.mjs`、`tools/gen-cldr.mjs` |
-| 一致性证据 | 独立增量 | 178 条由 Node 24.13.0 / ICU 77.1 生成的静态差分断言；总计 255 项测试；WASM-GC、JS、Native 三后端 CI | `conformance/intl_conformance_wbtest.mbt`、`.github/workflows/ci.yml` |
+| 一致性证据 | 独立增量 | 178 条由 Node 24.13.0 / ICU 77.1 生成的静态差分断言；总计 260 项测试；WASM-GC、JS、Native 三后端 CI | `conformance/intl_conformance_wbtest.mbt`、`.github/workflows/ci.yml` |
 | 结构化结果 | 独立增量 | `NumberFormatResult` 同时返回渲染文本和实际使用的整数/小数位，复数选择可直接复用这些位数，避免“显示 1.00 却按 1 选复数” | `number/format.mbt`、`plural/eval.mbt`、`relative/format.mbt` |
-| 格式语义 | 深度增量 | 负数子模式、accounting、ISO 4217 小数位、货币间距与窄符号、紧凑记数复数覆盖、日期区间 fallback、引号字面量、`¤` 占位符 | `number/format.mbt`、`datetime/format.mbt`、`plural/eval.mbt` |
+| 格式语义 | 深度增量 | `@` 有效位、`1-9` 增量舍入、负数子模式、accounting、ISO 4217 小数位、货币间距与窄符号、紧凑记数复数覆盖、日期区间 fallback、引号字面量、`¤` 占位符 | `number/format.mbt`、`datetime/format.mbt`、`plural/eval.mbt` |
 | 失败语义 | 独立增量 | 严格解析用 `try_parse`，支持的 locale 回退有明确顺序；不支持的日期字段可用 `Skip` / `Preserve` / `Reject` 显式处理，不会伪造时区结果 | `core/locale.mbt`、`datetime/format.mbt` |
 | 可审计性 | 独立增量 | 明确声明支持面和排除项，不用“完整 CLDR”描述当前版本；版本升级有固定步骤和机器校验 | `docs/conformance.md` 第 3.5、4 节、`tools/check-conformance.mjs` |
 
@@ -148,7 +148,7 @@ node tools/check-conformance.mjs
 
 当前基线：
 
-- `moon test`：255 项测试全部通过，其中 178 项为 Intl 差分断言。
+- `moon test`：260 项测试全部通过，其中 178 项为 Intl 差分断言。
 - 数据基线：CLDR 48 / UTS #35 revision 48，6 个区域、`latn`、Gregorian。
 - 后端矩阵：`wasm-gc`、`js`、`native`，见 `.github/workflows/ci.yml`。
 - 数据交付：生成代码已提交，运行时零 IO、零 FFI；数据约 37 KB。

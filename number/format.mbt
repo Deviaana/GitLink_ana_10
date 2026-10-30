@@ -99,7 +99,8 @@ fn is_alpha_currency_text(text : String) -> Bool {
 
 ///|
 fn is_digit_placeholder(c : Char) -> Bool {
-  c == '0' || c == '#'
+  let code = c.to_int()
+  c == '0' || c == '#' || c == '@' || (code >= 49 && code <= 57)
 }
 
 ///|
@@ -160,6 +161,16 @@ fn format_digits_text(
   max_fraction : Int32,
   min_fraction : Int32,
 ) -> (String, String) {
+  format_digits_text_with_increment(raw, max_fraction, min_fraction, 1)
+}
+
+///|
+fn format_digits_text_with_increment(
+  raw : String,
+  max_fraction : Int32,
+  min_fraction : Int32,
+  increment : Int32,
+) -> (String, String) {
   let max_clamped = if max_fraction > 15 {
     15
   } else if max_fraction < 0 {
@@ -174,7 +185,7 @@ fn format_digits_text(
   } else {
     min_fraction
   }
-  let rounded = @decimal.round_to_fraction(raw, max_clamped)
+  let rounded = @decimal.round_to_scale(raw, max_clamped, increment)
   (rounded.0, trim_fraction(rounded.1, min_clamped))
 }
 
@@ -185,6 +196,79 @@ fn format_digits(
   min_fraction : Int32,
 ) -> (String, String) {
   format_digits_text(value.to_string(), max_fraction, min_fraction)
+}
+
+///|
+fn format_digits_with_increment(
+  value : Double,
+  max_fraction : Int32,
+  min_fraction : Int32,
+  increment : Int32,
+) -> (String, String) {
+  format_digits_text_with_increment(
+    value.to_string(),
+    max_fraction,
+    min_fraction,
+    increment,
+  )
+}
+
+///|
+fn decimal_order_text(
+  integer_digits : String,
+  fraction_digits : String,
+) -> Int32 {
+  let digits = integer_digits + fraction_digits
+  let mut first = 0
+  while first < digits.length() && digits.get_char(first).unwrap() == '0' {
+    first = first + 1
+  }
+  if first >= digits.length() {
+    0
+  } else {
+    integer_digits.length() - first - 1
+  }
+}
+
+///|
+fn format_significant_text(
+  raw : String,
+  min_significant : Int32,
+  max_significant : Int32,
+) -> (String, String) {
+  let max_clamped = if max_significant < 1 {
+    1
+  } else if max_significant > 15 {
+    15
+  } else {
+    max_significant
+  }
+  let min_clamped = if min_significant < 1 {
+    1
+  } else if min_significant > max_clamped {
+    max_clamped
+  } else {
+    min_significant
+  }
+  let expanded = @decimal.expand_decimal(raw)
+  let digits = expanded.0 + expanded.1
+  let mut first = 0
+  while first < digits.length() && digits.get_char(first).unwrap() == '0' {
+    first = first + 1
+  }
+  if first >= digits.length() {
+    return ("0", trim_fraction("", min_clamped - 1))
+  }
+  let order = expanded.0.length() - first - 1
+  let first_scale = max_clamped - order - 1
+  let first_round = @decimal.round_to_scale(raw, first_scale, 1)
+  let rounded_order = decimal_order_text(first_round.0, first_round.1)
+  let target_scale = max_clamped - rounded_order - 1
+  let rounded = @decimal.round_to_scale(raw, target_scale, 1)
+  let needed_scale = min_clamped - rounded_order - 1
+  let minimum_scale = if needed_scale > 0 { needed_scale } else { 0 }
+  let fraction = trim_fraction(rounded.1, minimum_scale)
+  (rounded.0, fraction)
 }
 
 ///|
@@ -212,6 +296,10 @@ fn scientific_digits(
   min_fraction : Int32,
   exponent_min_digits : Int32,
   exponent_plus : Bool,
+  significant : Bool,
+  min_significant : Int32,
+  max_significant : Int32,
+  increment : Int32,
 ) -> (String, String, String) {
   let max_clamped = if max_fraction > 15 {
     15
@@ -228,7 +316,11 @@ fn scientific_digits(
     min_fraction
   }
   if value == 0.0 {
-    let fraction = trim_fraction("", min_clamped)
+    let fraction = if significant {
+      trim_fraction("", min_significant - 1)
+    } else {
+      trim_fraction("", min_clamped)
+    }
     return (
       "0",
       fraction,
@@ -249,33 +341,53 @@ fn scientific_digits(
     )
   }
   let mut exponent = expanded.0.length() - first - 1
-  let significant = digits[first:digits.length()]
-  let mantissa = if significant.length() > 1 {
-    significant[0:1] + "." + significant[1:significant.length()]
+  let significant_digits = digits[first:digits.length()]
+  let mantissa = if significant_digits.length() > 1 {
+    significant_digits[0:1] +
+    "." +
+    significant_digits[1:significant_digits.length()]
   } else {
-    significant
+    significant_digits
   }
-  let rounded = format_digits_text(
-    mantissa.to_owned(),
-    max_clamped,
-    min_clamped,
-  )
+  let rounded = if significant {
+    format_significant_text(
+      mantissa.to_owned(),
+      min_significant,
+      max_significant,
+    )
+  } else {
+    format_digits_text_with_increment(
+      mantissa.to_owned(),
+      max_clamped,
+      min_clamped,
+      increment,
+    )
+  }
   let mut mantissa_integer = rounded.0
   let mut mantissa_fraction = rounded.1
   if mantissa_integer.length() > 1 {
     exponent = exponent + 1
     let combined = mantissa_integer + mantissa_fraction
-    let wanted = 1 + max_clamped
+    let wanted = if significant {
+      if max_significant < 1 {
+        1
+      } else {
+        max_significant
+      }
+    } else {
+      1 + max_clamped
+    }
     let normalized = if combined.length() >= wanted {
       combined[0:wanted]
     } else {
       combined.pad_end(wanted, '0')
     }
     mantissa_integer = normalized[0:1].to_owned()
-    mantissa_fraction = trim_fraction(
-      normalized[1:wanted].to_owned(),
-      min_clamped,
-    )
+    mantissa_fraction = if significant {
+      normalized[1:wanted].to_owned()
+    } else {
+      trim_fraction(normalized[1:wanted].to_owned(), min_clamped)
+    }
   }
   (
     mantissa_integer,
@@ -321,73 +433,97 @@ fn format_core_result(
   currency : CurrencyReplacement?,
 ) -> NumberFormatResult {
   let data = resolve_number_data(locale)
-  if value.is_nan() {
-    return { text: data.nan, integer_digits: "", fraction_digits: "", }
-  }
-  if value.is_inf() {
-    let text = if value < 0.0 {
-      data.minus_sign + data.infinity
-    } else {
-      data.infinity
-    }
-    return { text, integer_digits: "", fraction_digits: "", }
-  }
+  let parsed = parse_pattern(pattern, data.percent_sign, currency)
   let negative = value < 0.0
-  let absolute = if negative { -value } else { value }
-  let parsed = parse_pattern(pattern)
-  let max_fraction = options.max_fraction.unwrap_or(parsed.max_fraction)
-  let min_fraction = options.min_fraction.unwrap_or(parsed.min_fraction)
   let mut exponent_text = ""
-  let parts = if parsed.scientific {
-    let scientific = scientific_digits(
-      absolute,
-      data,
-      max_fraction,
-      min_fraction,
-      parsed.exponent_min_digits,
-      parsed.exponent_plus,
-    )
-    exponent_text = scientific.2
-    (scientific.0, scientific.1)
+  let mut int_digits = ""
+  let mut frac_digits = ""
+  let mut body = ""
+  if value.is_nan() {
+    body = data.nan
+  } else if value.is_inf() {
+    body = data.infinity
   } else {
-    format_digits(absolute, max_fraction, min_fraction)
+    let absolute = if negative { -value } else { value }
+    let scaled_absolute = absolute * parsed.scale.to_double()
+    let max_fraction = options.max_fraction.unwrap_or(parsed.max_fraction)
+    let min_fraction = options.min_fraction.unwrap_or(parsed.min_fraction)
+    let parts = if parsed.scientific {
+      let scientific = scientific_digits(
+        scaled_absolute,
+        data,
+        max_fraction,
+        min_fraction,
+        parsed.exponent_min_digits,
+        parsed.exponent_plus,
+        parsed.significant,
+        parsed.min_significant,
+        parsed.max_significant,
+        parsed.rounding_increment,
+      )
+      exponent_text = scientific.2
+      (scientific.0, scientific.1)
+    } else if parsed.significant {
+      format_significant_text(
+        scaled_absolute.to_string(),
+        parsed.min_significant,
+        parsed.max_significant,
+      )
+    } else {
+      format_digits_with_increment(
+        scaled_absolute,
+        max_fraction,
+        min_fraction,
+        parsed.rounding_increment,
+      )
+    }
+    int_digits = if parsed.significant {
+      parts.0
+    } else if parsed.min_integer == 0 && parts.0 == "0" && min_fraction > 0 {
+      ""
+    } else {
+      parts.0.pad_start(parsed.min_integer, '0')
+    }
+    frac_digits = parts.1
+    let grouped = if options.grouping && !parsed.scientific {
+      group_digits(
+        int_digits,
+        parsed.group_primary,
+        parsed.group_secondary,
+        data.group,
+      )
+    } else {
+      int_digits
+    }
+    body = grouped
+    if frac_digits.length() > 0 {
+      body = body + data.decimal + frac_digits
+    }
+    body = body + exponent_text
   }
-  let int_digits = parts.0.pad_start(parsed.min_integer, '0')
-  let frac_digits = parts.1
-  let grouped = if options.grouping && !parsed.scientific {
-    group_digits(
-      int_digits,
-      parsed.group_primary,
-      parsed.group_secondary,
-      data.group,
-    )
-  } else {
-    int_digits
-  }
-  let mut prefix = if negative && parsed.has_negative {
+  let prefix = if negative && parsed.has_negative {
     parsed.negative_prefix
   } else if negative {
     data.minus_sign + parsed.positive_prefix
   } else {
     parsed.positive_prefix
   }
-  let mut suffix = if negative && parsed.has_negative {
+  let suffix = if negative && parsed.has_negative {
     parsed.negative_suffix
   } else {
     parsed.positive_suffix
   }
-  match currency {
-    Some(info) => {
-      prefix = replace_currency(prefix, info, true)
-      suffix = replace_currency(suffix, info, false)
-    }
+  body = body + suffix
+  let mut text = prefix + body
+  match parsed.pad_char {
+    Some(pad) =>
+      if text.length() < parsed.pad_width {
+        text = prefix +
+          repeat_char(pad, parsed.pad_width - text.length()) +
+          body
+      }
     None => ()
   }
-  let mut text = prefix + grouped
-  if frac_digits.length() > 0 {
-    text = text + data.decimal + frac_digits
-  }
-  text = text + exponent_text + suffix
   { text, integer_digits: int_digits, fraction_digits: frac_digits, }
 }
 
@@ -484,7 +620,7 @@ fn format_compact_plain(
 ) -> String {
   let negative = value < 0.0
   let absolute = if negative { -value } else { value }
-  let parsed = parse_pattern(data.decimal_pattern)
+  let parsed = parse_pattern(data.decimal_pattern, data.percent_sign, None)
   let max_fraction = options.max_fraction.unwrap_or(parsed.max_fraction)
   let min_fraction = options.min_fraction.unwrap_or(parsed.min_fraction)
   let digits = format_digits(absolute, max_fraction, min_fraction)
@@ -532,7 +668,7 @@ pub fn format_compact(
     Some(pattern) => pattern
     None => return format_compact_plain(value, data, opts)
   }
-  let base = parse_pattern(base_pattern)
+  let base = parse_pattern(base_pattern, data.percent_sign, None)
   if base.positive_prefix.length() == 0 && base.positive_suffix.length() == 0 {
     return format_compact_plain(value, data, opts)
   }
@@ -550,7 +686,7 @@ pub fn format_compact(
   let pattern = compact_pattern(data, magnitude, category).unwrap_or(
     base_pattern,
   )
-  let section = parse_pattern(pattern)
+  let section = parse_pattern(pattern, data.percent_sign, None)
   if section.positive_prefix.length() == 0 &&
     section.positive_suffix.length() == 0 {
     return format_compact_plain(value, data, opts)
@@ -633,9 +769,9 @@ pub fn format_percent(
 ) -> String {
   let data = resolve_number_data(locale)
   format_core(
-    ratio * 100.0,
+    ratio,
     locale,
-    data.percent_pattern.replace_all(old="%", new=data.percent_sign),
+    data.percent_pattern,
     options.unwrap_or(NumberOptions::default()),
     None,
   )
@@ -801,7 +937,9 @@ pub fn format_currency_with_pattern(
 }
 
 ///|
-/// Format with an explicit CLDR pattern, mainly useful for tests and extensions.
+/// Format with an explicit CLDR number pattern, including fixed/significant
+/// digits, rounding increments, scientific notation, percent/permille scaling,
+/// quoted literals and padding.
 pub fn format_with_pattern(
   value : Double,
   locale : @core.Locale,

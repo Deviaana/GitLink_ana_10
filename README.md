@@ -47,7 +47,7 @@ MoonBit 已有 `moonlocale` 等跨后端 locale 库，基础格式化能力存�
 | 能力 | 状态 | 说明 |
 | --- | --- | --- |
 | Locale 解析 | 已实现 | BCP 47 子集、严格校验、variants/extensions、likely subtags、Accept-Language 协商 |
-| 十进制数字 | 已实现 | CLDR 模式、分组、最小/最大小数位、科学计数法 |
+| 十进制数字 | 已实现 | CLDR 模式、分组、`0/#` 固定位、`@` 有效位、`1-9` 增量舍入、科学计数法 |
 | 货币格式化 | 已实现 | symbol/code/name/narrow 显示、accounting 模式、ISO 4217 小数位 |
 | 百分比 | 已实现 | CLDR 百分比模式与本地化百分号 |
 | 复数规则 | 已实现 | 基数与序数规则、CLDR 规则语法解析与求值 |
@@ -122,12 +122,29 @@ likely-subtag 表覆盖项目内置区域及常见语言。
 ## 数字选项
 
 ```moonbit
+let en = @core.Locale::parse("en")
 let money = @number.NumberOptions::with_fraction_digits(2, 2)
 @number.format_decimal(1.0, locale, options=money)     // 1,00
 
 let plain = @number.NumberOptions::default().without_grouping()
 @number.format_decimal(1234567.0, locale, options=plain)
+
+@number.format_with_pattern(1.0, en, "@@@")             // 1.00（3 位有效位）
+@number.format_with_pattern(0.12345, en, "@@##")        // 0.1235（2-4 位有效位）
+@number.format_with_pattern(1.22, en, "0.05")           // 1.20（按 0.05 舍入）
+@number.format_with_pattern(1.23, en, "0.05")           // 1.25
+@number.format_with_pattern(1234.56, en, "#,##0.05")    // 1,234.55
+@number.format_with_pattern(1.15, en, "0.25")           // 1.25（两个增量位组成 0.25）
+@number.format_with_pattern(0.125, en, "0%")            // 13%
+@number.format_with_pattern(0.125, en, "0‰")            // 125‰
+@number.format_with_pattern(1.2, en, "*_#,##0.00")      // ____1.20
 ```
+
+数字模式同时覆盖正负子模式、引号字面量、`E` 科学计数法、`¤` 货币标记和 `*`
+填充转义。
+`@` 的数量是最小有效位，后续 `#` 扩展最大有效位；`1-9` 所在位决定增量舍入单位，
+多个 `1-9` 位按位置共同组成完整增量（如 `0.25`），采用 half-away-from-zero。完整验收矩阵与案例见
+[`docs/conformance.md`](docs/conformance.md) 第 3.3.1 节。
 
 ## 货币显示与会计格式
 
@@ -212,7 +229,7 @@ moon test
 生成器会对货币数据进行去重：共享的 ISO 代码表和基于英语的符号表只生成一次，
 每个区域只保存自己的符号、窄符号覆盖以及按货币代码排列的本地名称。紧凑记数表
 为每个数量级保存一个默认模式，并仅在需要时保存复数覆盖。加入科学计数法和紧凑
-记数数据后，`data/generated.mbt` 仍从 40,088 字节降至 37,021 字节，缩小 7.7%。
+记数数据后，`data/generated.mbt` 仍从 40,088 字节降至 37,273 字节，缩小 7.0%。
 生成器最后会执行 `moon fmt`，保证重新生成的文件符合格式要求。
 
 ## 测试
@@ -227,9 +244,9 @@ node tools/gen-intl-fixtures.mjs --check
 ```
 
 当前测试覆盖严格 Locale 解析、likely subtags、Accept-Language 协商、区域回退、
-分组与小数位规则、负数子模式、ISO 4217 小数位、基数与序数复数选择、多区域日期
-时间风格、数字与日期模式中的引号字面量、相对时间、科学计数法、紧凑记数以及共享
-货币表覆盖。
+分组与小数位规则、负数子模式、`@` 有效位、`1-9` 增量舍入、百分比/千分比缩放、
+ISO 4217 小数位、基数与序数复数选择、多区域日期时间风格、数字与日期模式中的引号
+字面量、相对时间、科学计数法、紧凑记数以及共享货币表覆盖。
 
 ## 持续集成与发布
 
@@ -244,7 +261,7 @@ node tools/gen-intl-fixtures.mjs --check
 
 `conformance/intl_conformance_wbtest.mbt` 包含 178 条由 Node.js 24.13.0 / ICU
 77.1 生成的静态白盒断言。因此 CI 运行时只需要 `moon test`，不需要 Node.js 参与
-格式化。当前 `moon test` 共 **255 项测试**，其中 178 项为 Intl 差分用例。
+格式化。当前 `moon test` 共 **260 项测试**，其中 178 项为 Intl 差分用例。
 测试覆盖 6 个区域，包括十进制与负数、百分号、货币符号/代码/名称/窄符号、
 accounting 模式、日期、时间、相对日/小时、科学计数法、紧凑记数、基数复数和
 可见小数位。
@@ -292,7 +309,8 @@ node tools/gen-intl-fixtures.mjs --check
 
 竞赛申报书与生态调研位于 [`docs/proposal.md`](docs/proposal.md)。与
 `zlhahaha/moonlocale` 的逐项对比、差异化说明和申诉可用表述见
-[`docs/moonlocale-comparison.md`](docs/moonlocale-comparison.md)。
+[`docs/moonlocale-comparison.md`](docs/moonlocale-comparison.md)。针对数字模式
+完整语义与增量舍入的复审对照见 [`docs/resubmission-note.md`](docs/resubmission-note.md)。
 
 ## 许可证
 

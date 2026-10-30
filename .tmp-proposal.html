@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>proposal.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+@page { size: A4; margin: 0; }
+body {
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
+  padding: 1.5cm calc(1cm + 12px) 1cm;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.print-header, .print-footer {
+  position: fixed;
+  left: 1cm;
+  right: 1cm;
+  color: #666;
+  font: 9px "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+.print-header { top: 0.85cm; display: flex; justify-content: space-between; }
+.print-footer { bottom: 0.55cm; text-align: center; }
+</style>
+</head>
+<body class="vscode-light">
+<div class="print-header"><span>proposal.md</span><span>2026-10-30</span></div>
+<h1>moonl10n 项目申报书</h1>
+<h2>1. 基本信息</h2>
+<ul>
+<li>项目名称：moonl10n：面向 MoonBit 生态的本地化格式化内核</li>
+<li>参赛者：刘乐琪</li>
+<li>联系方式：15827309010</li>
+<li>GitHub 仓库链接：<a href="https://github.com/Deviaana/GitLink_ana_10.git">https://github.com/Deviaana/GitLink_ana_10.git</a></li>
+<li>GitLink 仓库链接：<a href="https://gitlink.org.cn/ana77/moonl10n.git">https://gitlink.org.cn/ana77/moonl10n.git</a></li>
+<li>项目方向：MoonBit 基础软件与开发工具 / 国际化与本地化基础设施 / CLDR 格式化内核</li>
+<li>是否为原创项目：是</li>
+<li>是否为移植项目：否</li>
+</ul>
+<h2>2. 项目简介</h2>
+<p>moonl10n 是使用 MoonBit 编写的本地化格式化库，接收 locale、数值和选项，在项目声明的 CLDR 48 支持范围内输出数字、货币、百分比、日期时间、相对时间、复数和紧凑记数，不依赖宿主 <code>Intl</code> 或 FFI，可在 WASM-GC、JS、Native 后端保持一致结果。</p>
+<h2>3. 预期使用场景</h2>
+<ol>
+<li><strong>数据图表</strong>：图表库传入 12345 和 2026-10-18，英文显示 <code>12K</code>、<code>Oct 18, 2026</code>，中文显示 <code>1.2万</code>、<code>2026年10月18日</code>，供坐标轴、图例和提示框使用。</li>
+<li><strong>跨境账单</strong>：Native 服务生成多语言账单，货币输出 <code>$1,234.50</code> 或 <code>1.234,50 €</code>，日期区间表示账期，相对时间显示“3 天前”，无需 Node.js 或宿主 <code>Intl</code>。</li>
+<li><strong>多语言界面</strong>：应用按 <code>zh-HK, en;q=0.8</code> 协商语言，复数选择 <code>1 file / 3 files</code>，相对时间显示消息时间；同一代码在 WASM、Native 和后端测试中结果一致。</li>
+</ol>
+<h2>4. 拟实现的核心功能</h2>
+<ul>
+<li>Locale 解析、严格校验、likely subtags、语言协商与回退。</li>
+<li>CLDR 数据抓取、裁剪、去重和 MoonBit 常量生成。</li>
+<li>十进制、货币、百分比、科学计数法和紧凑记数；数字模式支持固定位/有效位、<code>1-9</code> 舍入增量、缩放、子模式、引号与填充。</li>
+<li>日期时间、区间、相对时间及不支持字段策略。</li>
+<li>基数/序数复数规则解析、求值和缓存。</li>
+<li>数字与日期共用 tokenizer，支持引号字面量和 <code>¤</code> 货币占位符。</li>
+<li>三后端测试、Intl 一致性用例、覆盖率、示例和发布流程；现有 260 项测试和 178 条 Intl 差分用例。</li>
+</ul>
+<h2>5. 原创项目、移植项目与参考项目说明</h2>
+<p>本项目为原创项目，不是移植项目。设计时参考 Unicode CLDR、ECMA-402 <code>Intl</code> 和 ICU4X 架构（<a href="https://github.com/unicode-org/icu4x%EF%BC%8CUnicode">https://github.com/unicode-org/icu4x，Unicode</a> License），未复制实现代码。CLDR 数据遵循 Unicode License，本项目代码使用 Apache-2.0。</p>
+
+<div class="print-footer">1 / 1</div>
+</body>
+</html>

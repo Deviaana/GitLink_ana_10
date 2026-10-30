@@ -14,6 +14,16 @@ fn main {
   show("compact", @number.format_compact(1234567.0, de))
   show("scientific", @number.format_scientific(1234567.0, de))
   show("pattern", @number.format_with_pattern(12.5, en, "0.0 'kg'"))
+  show("significant", @number.format_with_pattern(1.0, en, "@@@"))
+  show("significant range", @number.format_with_pattern(0.12345, en, "@@##"))
+  show("increment down", @number.format_with_pattern(1.22, en, "0.05"))
+  show("increment up", @number.format_with_pattern(1.23, en, "0.05"))
+  show(
+    "increment grouping",
+    @number.format_with_pattern(1234.56, en, "#,##0.05"),
+  )
+  show("permille", @number.format_with_pattern(0.125, en, "0‰"))
+  show("pad", @number.format_with_pattern(1.2, en, "*_#,##0.00"))
 
   let date = @datetime.DateTime::new(2026, 10, 18, hour=17, minute=42)
   show("date", @datetime.format_date(date, de))

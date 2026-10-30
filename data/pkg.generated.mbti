@@ -2,6 +2,14 @@
 package "moonl10n/moonl10n/data"
 
 // Values
+pub fn cldr_calendar() -> String
+
+pub fn cldr_numbering_system() -> String
+
+pub fn cldr_uts35_revision() -> String
+
+pub fn cldr_version() -> String
+
 pub fn currency_digits(String) -> Int
 
 pub fn date_data(String) -> DateData?

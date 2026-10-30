@@ -1,0 +1,19 @@
+*** Begin Patch
+*** Update File: docs/proposal.md
+@@
+-- 十进制、货币、百分比、科学计数法和紧凑记数；数字模式支持固定位/有效位、`1-9` 舍入增量、科学计数法、`%`/`‰` 缩放、正负子模式、引号字面量与 `*` 填充。
++- 十进制、货币、百分比、科学计数法和紧凑记数；数字模式支持固定位/有效位、`1-9` 舍入增量、缩放、子模式、引号与填充。
+@@
+-- 三后端测试、Intl 一致性用例、覆盖率、示例和发布流程；现有 260 项测试和 178 条 Intl 差分用例。
+-
+-增量舍入按 `1-9` 位组合（如 `0.25` + `1.15` → `1.25`）；完整验收见 `docs/conformance.md` 第 3.3.1 节和 `docs/resubmission-note.md`。
++- 三后端测试、Intl 一致性用例、覆盖率、示例和发布流程；现有 260 项测试和 178 条 Intl 差分用例。
+*** Update File: .tmp-render-proposal-html.cjs
+@@
+ body {
++  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
+   padding: 1.5cm calc(1cm + 12px) 1cm;
+   -webkit-print-color-adjust: exact;
+   print-color-adjust: exact;
+ }
+*** End Patch

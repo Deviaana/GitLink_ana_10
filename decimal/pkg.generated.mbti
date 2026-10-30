@@ -8,6 +8,8 @@ pub fn parse_decimal_text(String) -> Double
 
 pub fn round_to_fraction(String, Int) -> (String, String)
 
+pub fn round_to_scale(String, Int, Int) -> (String, String)
+
 pub fn split_decimal(String) -> (String, String)
 
 // Errors

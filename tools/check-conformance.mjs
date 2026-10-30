@@ -34,6 +34,27 @@ const fixtures = requireText("conformance/intl_conformance_wbtest.mbt", [
   `// CLDR data baseline: ${baseline.cldrVersion} (UTS #35 revision ${baseline.uts35Revision}).`,
 ]);
 
+requireText("number/format_wbtest.mbt", [
+  `test "significant digit patterns follow CLDR @"`,
+  `test "rounding increments come from 1-9 pattern digits"`,
+  `test "quoted pattern literals and currency markers"`,
+  `test "pad escape uses the following character and pattern width"`,
+  `format_with_pattern(0.12345, en, "@@##")`,
+  `format_with_pattern(1.23456, en, "0.005")`,
+  `format_with_pattern(1.15, en, "0.25")`,
+  `format_with_pattern(1.0, en, "0''")`,
+  `format_currency_with_pattern(1234.5, "USD", en, "'\\u{00A4}'#,##0.00")`,
+  `format_with_pattern(1.2, en, "*_#,##0.00")`,
+]);
+
+requireText("docs/resubmission-note.md", [
+  `## 2. 有效位验收案例`,
+  `## 3. 增量舍入验收案例`,
+  "| `0.25` + `1.15` |",
+  `moon test --target js`,
+  `moon test --target native`,
+]);
+
 const fixtureCount = (fixtures.match(/^test "/gm) ?? []).length;
 if (fixtureCount !== baseline.intlFixtures) {
   throw new Error(
@@ -52,6 +73,12 @@ const conformance = requireText("docs/conformance.md", [
   `UTS #35 revision ${baseline.uts35Revision}`,
   `Node ${baseline.nodeVersion}`,
   `ICU ${baseline.icuVersion}`,
+  `#### 3.3.1 数字模式验收范围`,
+  `有效位验收案例`,
+  `增量舍入验收案例`,
+  `填充验收案例`,
+  `format_with_pattern(1.15, en, "0.25")`,
+  "引号内货币占位符保持字面量",
 ]);
 
 for (const locale of baseline.locales) {

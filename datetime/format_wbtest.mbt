@@ -46,6 +46,7 @@ test "explicit patterns preserve intentional whitespace" {
   let en = @core.Locale::parse("en")
   assert_eq(format_pattern(date, en, " yyyy-MM-dd "), " 2026-10-18 ")
   assert_eq(format_pattern(date, en, "yyyy 'at' HH:mm"), "2026 at 00:00")
+  assert_eq(format_pattern(date, en, "*_"), "*_")
 }
 
 ///|
@@ -64,6 +65,11 @@ test "unsupported fields can be skipped preserved or rejected" {
   let rejected = format_pattern_with_policy(date, en, "yyyy-MM-dd z", Reject)
   match rejected {
     Ok(_) => assert_eq("expected an unsupported field error", "ok")
+    Err(UnsupportedField(field)) => assert_eq(field, 'z')
+  }
+  let star_rejected = format_pattern_with_policy(date, en, "*z", Reject)
+  match star_rejected {
+    Ok(_) => assert_eq("expected an unsupported field after literal star", "ok")
     Err(UnsupportedField(field)) => assert_eq(field, 'z')
   }
 }

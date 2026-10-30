@@ -2,6 +2,8 @@
 /// One lexical token from a CLDR date or number pattern.
 pub(all) enum PatternToken {
   Literal(String)
+  Quoted(String)
+  Pad(Char)
   Field(Char, Int32)
   Placeholder(Char, Int32)
   Currency(Int32)
@@ -27,12 +29,22 @@ fn push_literal(tokens : Array[PatternToken], text : String) -> Unit {
 }
 
 ///|
-/// Tokenize dates and number patterns with the CLDR quoting rules.
-///
-/// Single quotes delimit literals, `''` represents a literal quote, repeated
-/// pattern letters form one field token, and an unquoted `;` separates number
-/// subpatterns.
+/// Tokenize a date pattern with the CLDR quoting rules.
 pub fn tokenize_pattern(pattern : String) -> Array[PatternToken] {
+  tokenize_pattern_impl(pattern, false)
+}
+
+///|
+/// Tokenize a number pattern, including the `*` padding escape.
+pub fn tokenize_number_pattern(pattern : String) -> Array[PatternToken] {
+  tokenize_pattern_impl(pattern, true)
+}
+
+///|
+fn tokenize_pattern_impl(
+  pattern : String,
+  number_mode : Bool,
+) -> Array[PatternToken] {
   let chars = pattern.to_array()
   let tokens : Array[PatternToken] = []
   let length = chars.length()
@@ -40,6 +52,11 @@ pub fn tokenize_pattern(pattern : String) -> Array[PatternToken] {
   while index < length {
     let c = chars[index]
     if c.to_int() == 39 {
+      if index + 1 < length && chars[index + 1].to_int() == 39 {
+        push_literal(tokens, "'")
+        index = index + 2
+        continue
+      }
       index = index + 1
       let quoted = StringBuilder::new()
       let mut closed = false
@@ -57,7 +74,10 @@ pub fn tokenize_pattern(pattern : String) -> Array[PatternToken] {
           index = index + 1
         }
       }
-      push_literal(tokens, quoted.to_string())
+      let text = quoted.to_string()
+      if text.length() > 0 {
+        tokens.push(Quoted(text))
+      }
       continue
     }
     if c == ';' {
@@ -73,6 +93,16 @@ pub fn tokenize_pattern(pattern : String) -> Array[PatternToken] {
       tokens.push(Currency(index - start))
       continue
     }
+    if number_mode && c == '*' {
+      if index + 1 < length {
+        tokens.push(Pad(chars[index + 1]))
+        index = index + 2
+      } else {
+        push_literal(tokens, "*")
+        index = index + 1
+      }
+      continue
+    }
     if c.is_ascii_alphabetic() {
       let start = index
       while index < length && chars[index] == c {
@@ -81,7 +111,11 @@ pub fn tokenize_pattern(pattern : String) -> Array[PatternToken] {
       tokens.push(Field(c, index - start))
       continue
     }
-    if c == '#' || c == '0' {
+    let placeholder_code = c.to_int()
+    if c == '#' ||
+      c == '0' ||
+      c == '@' ||
+      (placeholder_code >= 49 && placeholder_code <= 57) {
       let start = index
       while index < length && chars[index] == c {
         index = index + 1

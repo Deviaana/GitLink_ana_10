@@ -2,6 +2,8 @@
 package "moonl10n/moonl10n/pattern"
 
 // Values
+pub fn tokenize_number_pattern(String) -> Array[PatternToken]
+
 pub fn tokenize_pattern(String) -> Array[PatternToken]
 
 // Errors
@@ -9,6 +11,8 @@ pub fn tokenize_pattern(String) -> Array[PatternToken]
 // Types and methods
 pub(all) enum PatternToken {
   Literal(String)
+  Quoted(String)
+  Pad(Char)
   Field(Char, Int)
   Placeholder(Char, Int)
   Currency(Int)
